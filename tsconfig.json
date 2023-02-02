@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "sourceMap": true,
+    "allowJs": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "types": ["@item-enonic-types/global"],
+    "rootDirs": [
+      "./src/main/resources",
+      "./.xp-codegen"
+    ],
+    "paths": {
+      "/lib/xp/*": ["./node_modules/@enonic-types/lib-*"],
+      "/lib/*": [ "./node_modules/@item-enonic-types/lib-*" ,"./src/main/resources/lib/*"],
+      "/site/*": ["./.xp-codegen/site/*"],
+      "/tasks/*": ["./.xp-codegen/tasks/*"]
+    }
+  },
+  "include": [
+    "./.xp-codegen/**/*",
+    "./src/main/resources/**/*"
+  ],
+  "exclude": [
+    "./build/*",
+    "./src/main/resources/polyfills.js"
+  ]
+}

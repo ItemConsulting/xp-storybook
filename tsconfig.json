@@ -9,7 +9,7 @@
     "strictNullChecks": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "types": ["@item-enonic-types/global"],
+    "lib": ["es5"],
     "rootDirs": [
       "./src/main/resources",
       "./.xp-codegen"

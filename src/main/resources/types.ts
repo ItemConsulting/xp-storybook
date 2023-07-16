@@ -1,5 +1,5 @@
 /* eslint-disable */
-declare const resolve: (path: string) => import("@enonic-types/lib-export").ResourceKey;
+declare const resolve: (path: string) => import("@enonic-types/core").ResourceKey;
 
 declare const app: {
   /**
@@ -70,7 +70,7 @@ declare const __: {
   /**
    * Creates a new JavaScript bean that wraps the given Java class and makes its methods available to be called from JavaScript.
    */
-  newBean: unknown;
+  newBean: <T = unknown>(bean: string) => T;
 
   /**
    * Converts arrays or complex Java objects to JSON.

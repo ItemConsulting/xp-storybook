@@ -62,9 +62,14 @@ export function renderInlineTemplate<T = unknown>(view: TextTemplate, model: T):
   processor.template = view.template;
   processor.model = __.toScriptValue(model);
 
-  const res = processor.process();
+  return processor.process();
+}
 
-  log.info("Rendered inline " + res);
+export function isFile(value: unknown): value is File {
+  const file = value as File;
+  return file?.filePath !== undefined && file?.baseDirPath !== undefined;
+}
 
-  return res;
+export function isTextTemplate(value: unknown): value is TextTemplate {
+  return (value as TextTemplate)?.template !== undefined;
 }

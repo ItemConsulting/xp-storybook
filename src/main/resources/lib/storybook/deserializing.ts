@@ -33,7 +33,7 @@ function matchForJavaType(key: string, parsedMatchers: Record<string, RegExp>): 
   return undefined;
 }
 
-function createMatchers(matchers: Record<string, string>): Record<string, RegExp> {
+export function createMatchers(matchers: Record<string, string>): Record<string, RegExp> {
   const res: Record<string, RegExp> = {};
 
   for (const key in matchers) {

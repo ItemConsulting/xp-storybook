@@ -86,12 +86,8 @@ public final class FreemarkerFileProcessor {
 	}
 
 	private RuntimeException handleError(final TemplateException e) {
-    // TODO This probably doesn't work
-		final ResourceKey resource = e.getTemplateSourceName() != null ? ResourceKey.from(e.getTemplateSourceName()) : null;
-
 		return ResourceProblemException.create()
 				.lineNumber(e.getLineNumber())
-				.resource(resource)
 				.cause(e)
 				.message(e.getMessageWithoutStackTop())
 				.build();
@@ -101,7 +97,7 @@ public final class FreemarkerFileProcessor {
 		String error = "IO with the script.";
 		log.error(error, e);
 
-		return new RuntimeException(error, e);
+		return new RuntimeException(e);
 	}
 
 	private RuntimeException handleError(final RuntimeException e) {

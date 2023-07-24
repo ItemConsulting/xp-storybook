@@ -27,6 +27,10 @@ export function traverse(
   return res;
 }
 
+export function flatMap<A, B>(arr: Array<A>, f: (as: A) => Array<B>): Array<B> {
+  return arr.reduce<B[]>((res, val) => res.concat(f(val)), []);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && value.constructor?.name === "Object" && !isJavaClass(value);
 }

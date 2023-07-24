@@ -1,7 +1,8 @@
 const path = require("path");
 const glob = require("glob");
 const R = require("ramda");
-const { setEntriesForPath, addRule, prependExtensions } = require("./util/compose");
+const { ProvidePlugin } = require("webpack");
+const { setEntriesForPath, addRule, addPlugin, prependExtensions } = require("./util/compose");
 const env = require("./util/env");
 
 const RESOURCES_PATH = "src/main/resources";
@@ -61,7 +62,17 @@ function addTypeScriptSupport(cfg) {
     "types.ts",
   ]).filter((entry) => entry.indexOf(".d.ts") === -1);
 
-  return R.pipe(setEntriesForPath(entries), addRule(rule), prependExtensions([".ts", ".json"]))(cfg);
+  return R.pipe(
+    setEntriesForPath(entries),
+    addRule(rule),
+    addPlugin(
+      new ProvidePlugin({
+        "Object.assign": [path.join(__dirname, RESOURCES_PATH, "polyfills"), "assign"],
+        "Object.values": [path.join(__dirname, RESOURCES_PATH, "polyfills"), "values"],
+      })
+    ),
+    prependExtensions([".ts", ".json"])
+  )(cfg);
 }
 
 // BABEL

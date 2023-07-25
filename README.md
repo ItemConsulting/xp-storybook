@@ -1,4 +1,4 @@
-# Storybook integration for Enonic XP
+# Storybook Server integration for Enonic XP
 
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 

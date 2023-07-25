@@ -3,7 +3,6 @@ package no.item.storybook;
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
-import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 
 import java.io.File;
@@ -17,14 +16,14 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
-  private final String baseDir;
+  private final String baseDirPath;
 
-  public LocalizeTemplateDirectiveModel(String baseDir) {
-    this.baseDir = baseDir;
+  public LocalizeTemplateDirectiveModel(String baseDirPath) {
+    this.baseDirPath = baseDirPath;
   }
 
   @Override
-  public void execute(Environment env, Map params, TemplateModel[] loopVars, TemplateDirectiveBody body) throws TemplateException, IOException {
+  public void execute(Environment env, Map params, TemplateModel[] loopVars, TemplateDirectiveBody body) throws IOException {
     try (Writer out = env.getOut()) {
       ResourceBundle bundle = getResourceBundle(params);
       String key = params.get("key").toString();
@@ -39,7 +38,7 @@ public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
 
   private ResourceBundle getResourceBundle(Map params) throws MalformedURLException {
     Locale locale = params.containsKey("locale") ? Locale.forLanguageTag(params.get("locale").toString()) : Locale.ROOT;
-    File file = new File(baseDir + File.separator + "i18n");
+    File file = new File(baseDirPath + File.separator + "i18n");
     URL[] urls = {file.toURI().toURL()};
     ClassLoader loader = new URLClassLoader(urls);
 

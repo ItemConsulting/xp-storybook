@@ -1,8 +1,17 @@
-import { createMatchers, deserializeJsonEntries } from "/lib/storybook/deserializing";
-import { isFile, isTextTemplate, renderFile, renderInlineTemplate, type File, type TextTemplate } from "/lib/storybook";
-import { flatMap } from "/lib/storybook/utils";
+import { parseMatchers, deserializeJsonEntries } from "/lib/storybook/deserializing";
+import { isFile, isTextTemplate, render, type File, type TextTemplate } from "/lib/storybook";
+import { split } from "/lib/storybook/utils";
+import {
+  findRegions,
+  getRegionComponents,
+  isRegion,
+  type ComponentDescriptor,
+  type Component,
+  isComponentDescriptor,
+} from "/lib/storybook/regions";
 import type { Request, Response } from "@item-enonic-types/global/controller";
-import type { Component, Region } from "@enonic-types/core";
+
+type ViewMap = Record<ComponentDescriptor, TextTemplate | File>;
 
 const HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,20 +26,14 @@ export function all(req: Request): Response<string> {
   }
 
   try {
-    const { template, baseDirPath, filePath, ...params } = req.params;
-    const model = deserializeJsonEntries(params);
+    const { view, views, model, components } = parseParams(req.params);
 
-    if (template) {
-      return {
-        status: 200,
-        body: renderInlineTemplate({ template, baseDirPath }, model),
-        headers: HEADERS,
-      };
-    } else if (filePath && baseDirPath) {
-      const renderedBody = renderFile({ filePath, baseDirPath }, model);
-      const components = flatMap(findRegions(req.params), (region) => region.components);
-
-      const body = components.reduce((str, component) => insertChildComponents(str, component, model), renderedBody);
+    if (view) {
+      const renderedBody = render(view, model);
+      const body = components.reduce(
+        (str, component) => insertChildComponents(str, views, component, model),
+        renderedBody
+      );
 
       return {
         status: 200,
@@ -54,60 +57,71 @@ export function all(req: Request): Response<string> {
   }
 }
 
-function insertChildComponents(body: string, component: Component, model: Record<string, unknown>): string {
-  const view = model[component.descriptor] as TextTemplate | File;
+type ParsedParams = {
+  view?: File | TextTemplate;
+  views: Record<ComponentDescriptor, TextTemplate | File>;
+  model: Record<string, unknown>;
+  components: Component[];
+};
+
+function parseParams(params: Request["params"]): ParsedParams {
+  const { template, baseDirPath, filePath, javaTypes, matchers, ...extra } = params;
+  const [views, rawModel] = split(extra, (value, key) => isComponentDescriptor(key));
+  const parsedMatchers = parseMatchers(JSON.parse(matchers ?? "{}"));
+  const parsedJavaTypes = JSON.parse(javaTypes ?? "{}");
+  const model = deserializeJsonEntries(rawModel, parsedMatchers, parsedJavaTypes);
+
+  return {
+    view: template
+      ? {
+          template,
+          baseDirPath,
+        }
+      : filePath && baseDirPath
+      ? {
+          filePath,
+          baseDirPath,
+        }
+      : undefined,
+    views: parseViews(views),
+    model,
+    components: parsedMatchers.region ? getRegionComponents(findRegions(model, parsedMatchers.region)) : [],
+  };
+}
+
+function parseViews(rec: Record<string, string | undefined>): ViewMap {
+  return Object.keys(rec).reduce<ViewMap>((res, key) => {
+    const value = JSON.parse(rec[key] ?? "{}");
+
+    if (isComponentDescriptor(key) && (isTextTemplate(value) || isFile(value))) {
+      res[key] = value;
+    }
+
+    return res;
+  }, {});
+}
+
+function insertChildComponents(
+  body: string,
+  views: Record<ComponentDescriptor, TextTemplate | File>,
+  component: Component,
+  model: Record<string, unknown>
+): string {
+  const view = views[component.descriptor];
 
   if (view === undefined) {
     log.warning(`You have not specified a template for the descriptor: "${component.descriptor}"`);
     return body;
   }
-  if (isTextTemplate(view)) {
-    const renderedBody = body.replace(
-      `<!--# COMPONENT ${component.path} -->`,
-      renderInlineTemplate(view, component.config)
-    );
 
-    return getComponentsForLayout(component).reduce(
-      (str, comp) => insertChildComponents(str, comp, model),
+  const renderedBody = body.replace(`<!--# COMPONENT ${component.path} -->`, render(view, component.config));
+
+  if (component.type !== "layout") {
+    return renderedBody;
+  } else {
+    return getRegionComponents(Object.values(component.config).filter(isRegion)).reduce(
+      (str, comp) => insertChildComponents(str, views, comp, model),
       renderedBody
     );
-  } else if (isFile(view)) {
-    const renderedBody = body.replace(`<!--# COMPONENT ${component.path} -->`, renderFile(view, component.config));
-
-    return getComponentsForLayout(component).reduce(
-      (str, comp) => insertChildComponents(str, comp, model),
-      renderedBody
-    );
-  } else {
-    log.warning(`The template you have specified for descriptor: "${component.descriptor}" is not valid`);
-    return body;
-  }
-}
-
-function isRegion(value: unknown): value is Region {
-  const region = value as Region;
-
-  return region?.components !== undefined;
-}
-
-function findRegions(rec: Record<string, string | undefined>): Array<Region> {
-  const parsedMatchers = createMatchers(JSON.parse(rec.matchers ?? "{}"));
-  const { Region } = parsedMatchers;
-
-  return Region
-    ? Object.keys(rec)
-        .filter((key) => Region.test(key))
-        .map((key) => JSON.parse(rec[key] ?? "{}"))
-    : [];
-}
-
-function getComponentsForLayout(component: Component): Component[] {
-  if (component.type === "layout") {
-    return flatMap(
-      Object.values(component.config as Record<string, unknown>).filter(isRegion),
-      (region) => region.components
-    );
-  } else {
-    return [];
   }
 }

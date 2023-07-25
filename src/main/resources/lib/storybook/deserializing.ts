@@ -1,11 +1,13 @@
 import { LocalDateTime, ZonedDateTime } from "/lib/time";
 import { pick, traverse } from "/lib/storybook/utils";
 
-export function deserializeJsonEntries(rec: Record<string, string | undefined>): Record<string, unknown> {
-  const { javaTypes, matchers, ...params } = rec;
-  const parsedJavaTypes: Record<string, string> = JSON.parse(javaTypes ?? "{}");
-  const parsedMatchers = createMatchers(JSON.parse(matchers ?? "{}"));
+export type MatcherMap = Record<string, RegExp>;
 
+export function deserializeJsonEntries(
+  params: Record<string, string | undefined>,
+  parsedMatchers: MatcherMap,
+  parsedJavaTypes: Record<string, string>
+): Record<string, unknown> {
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
 
@@ -33,8 +35,8 @@ function matchForJavaType(key: string, parsedMatchers: Record<string, RegExp>): 
   return undefined;
 }
 
-export function createMatchers(matchers: Record<string, string>): Record<string, RegExp> {
-  const res: Record<string, RegExp> = {};
+export function parseMatchers(matchers: Record<string, string>): MatcherMap {
+  const res: MatcherMap = {};
 
   for (const key in matchers) {
     const regex = stringToRegex(matchers[key]);
@@ -57,11 +59,11 @@ function stringToRegex(str: string): RegExp | undefined {
 
 export function deserializeJavaObjects(value: string, type: string): unknown {
   switch (type) {
-    case "ZonedDateTime":
+    case "zonedDateTime":
       return ZonedDateTime.parse(value);
-    case "LocalDateTime":
+    case "localDateTime":
       return LocalDateTime.parse(value);
-    case "Number":
+    case "number":
       return Number.parseInt(value);
     default:
       return value;

@@ -20,11 +20,43 @@ export function traverse(
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       const value = f(key, obj[key], path.concat(key));
-      res[key] = isRecord(value) ? traverse(value, f, path.concat(key)) : value;
+      res[key] = isRecord(value)
+        ? traverse(value, f, path.concat(key))
+        : Array.isArray(value)
+        ? value.map((val) => traverse(val, f, path.concat(key)))
+        : value;
     }
   }
 
   return res;
+}
+
+export function filterObject<T>(
+  rec: Record<string, T>,
+  predicate: (value: T, key: string) => boolean
+): Record<string, T> {
+  return Object.keys(rec).reduce<Record<string, T>>((res, key) => {
+    if (predicate(rec[key], key)) {
+      res[key] = rec[key];
+    }
+
+    return res;
+  }, {});
+}
+
+export type Splitted<T> = [left: Record<string, T>, right: Record<string, T>];
+
+export function split<T>(record: Record<string, T>, predicate: (value: T, key: string) => boolean): Splitted<T> {
+  return Object.keys(record).reduce<Splitted<T>>(
+    (tuple, key) => {
+      const value = record[key];
+
+      tuple[predicate(value, key) ? 0 : 1][key] = value;
+
+      return tuple;
+    },
+    [{}, {}]
+  );
 }
 
 export function flatMap<A, B>(arr: Array<A>, f: (as: A) => Array<B>): Array<B> {

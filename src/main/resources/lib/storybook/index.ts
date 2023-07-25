@@ -29,6 +29,10 @@ type FreemarkerService = {
  */
 const service = __.newBean<FreemarkerService>("no.item.storybook.FreemarkerService");
 
+export function render<T = unknown>(view: File | TextTemplate, model: T): string {
+  return isTextTemplate(view) ? renderInlineTemplate<T>(view, model) : renderFile<T>(view, model);
+}
+
 /**
  * This function renders a view using Freemarker.
  *

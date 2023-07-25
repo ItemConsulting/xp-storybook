@@ -23,7 +23,6 @@ public final class FreemarkerService implements ScriptBean {
     // Make these portal functions available as user-defined functions. Should now be possible to do: <@imageUrl id="11" scale="width(200)" customParam="123" />
     viewFunctions.add(new ViewFunctionSpec("pageUrl", "id", "path", "type"));
     viewFunctions.add(new ViewFunctionSpec("imageUrl", "id", "path", "format", "scale", "quality", "background", "filter", "type"));
-    viewFunctions.add(new ViewFunctionSpec("assetUrl", "path", "application", "type"));
     viewFunctions.add(new ViewFunctionSpec("attachmentUrl", "id", "path", "name", "label", "download", "type"));
     viewFunctions.add(new ViewFunctionSpec("componentUrl", "id", "path", "component", "type"));
     viewFunctions.add(new ViewFunctionSpec("serviceUrl", "service", "application", "type"));

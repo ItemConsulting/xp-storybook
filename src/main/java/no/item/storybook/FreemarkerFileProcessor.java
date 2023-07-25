@@ -73,6 +73,7 @@ public final class FreemarkerFileProcessor {
 		final Map<String, Object> map = model != null ? model.getMap() : Maps.newHashMap();
 		map.putAll(viewFunctions);
     map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPath));
+    map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
     CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
 

@@ -1,9 +1,12 @@
 # Storybook Server integration for Enonic XP
 
+This application integrates with [Storybook Server renderer](https://www.npmjs.com/package/@storybook/server) and can
+render [Freemarker templates](https://github.com/tineikt/xp-lib-freemarker/) with the args from Storybook.
+
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
-> **Warning** This application should **never** be deployed in production!
-> An attacker can use this application to render any content on your domain.
+> [!WARNING]  
+> This application should **never** be deployed in production! An attacker can use this application to render any content on your domain.
 
 ## Configuration
 

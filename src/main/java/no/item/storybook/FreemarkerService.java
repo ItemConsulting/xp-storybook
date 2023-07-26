@@ -3,7 +3,6 @@ package no.item.storybook;
 import com.enonic.xp.portal.PortalRequest;
 import com.enonic.xp.portal.PortalRequestAccessor;
 import com.enonic.xp.portal.view.ViewFunctionService;
-import com.enonic.xp.resource.ResourceService;
 import com.enonic.xp.script.bean.BeanContext;
 import com.enonic.xp.script.bean.ScriptBean;
 import freemarker.template.TemplateDirectiveModel;
@@ -12,7 +11,6 @@ import no.tine.xp.lib.freemarker.ViewFunctionSpec;
 import java.util.*;
 
 public final class FreemarkerService implements ScriptBean {
-  private ResourceService resourceService;
   private BeanContext context;
 
   private List<ViewFunctionSpec> viewFunctions;
@@ -33,7 +31,6 @@ public final class FreemarkerService implements ScriptBean {
   @Override
   public void initialize(final BeanContext context) {
     this.context = context;
-    this.resourceService = context.getService(ResourceService.class).get();
     FreemarkerFileProcessor.setupFreemarker();
     FreemarkerInlineTemplateProcessor.setupFreemarker();
   }

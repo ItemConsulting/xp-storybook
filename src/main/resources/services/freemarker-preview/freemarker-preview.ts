@@ -31,7 +31,7 @@ export function all(req: Request): Response<string> {
     if (view) {
       const renderedBody = render(view, model);
       const body = components.reduce(
-        (str, component) => insertChildComponents(str, views, component, model),
+        (str, component) => insertChildComponents(str, views, component, model, model.locale),
         renderedBody
       );
 
@@ -105,7 +105,8 @@ function insertChildComponents(
   body: string,
   views: Record<ComponentDescriptor, TextTemplate | File>,
   component: Component,
-  model: Record<string, unknown>
+  model: Record<string, unknown>,
+  locale?: unknown
 ): string {
   const view = views[component.descriptor];
 
@@ -114,13 +115,19 @@ function insertChildComponents(
     return body;
   }
 
-  const renderedBody = body.replace(`<!--# COMPONENT ${component.path} -->`, render(view, component.config));
+  const renderedBody = body.replace(
+    `<!--# COMPONENT ${component.path} -->`,
+    render(view, {
+      locale,
+      ...component.config,
+    })
+  );
 
   if (component.type !== "layout") {
     return renderedBody;
   } else {
     return getRegionComponents(Object.values(component.config).filter(isRegion)).reduce(
-      (str, comp) => insertChildComponents(str, views, comp, model),
+      (str, comp) => insertChildComponents(str, views, comp, model, locale),
       renderedBody
     );
   }

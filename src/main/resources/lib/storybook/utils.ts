@@ -23,7 +23,13 @@ export function traverse(
       res[key] = isRecord(value)
         ? traverse(value, f, path.concat(key))
         : Array.isArray(value)
-        ? value.map((val) => traverse(val, f, path.concat(key)))
+        ? value.map((val) => {
+            if (typeof val === "string" || val instanceof String) {
+              return val;
+            } else {
+              return traverse(val, f, path.concat(key));
+            }
+          })
         : value;
     }
   }

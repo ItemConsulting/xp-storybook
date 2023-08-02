@@ -24,11 +24,9 @@ export function traverse(
         ? traverse(value, f, path.concat(key))
         : Array.isArray(value)
         ? value.map((val) => {
-            if (typeof val === "string" || val instanceof String) {
-              return val;
-            } else {
-              return traverse(val, f, path.concat(key));
-            }
+            return typeof val === "string" || val instanceof String
+              ? f(key, val, path)
+              : traverse(val, f, path.concat(key));
           })
         : value;
     }

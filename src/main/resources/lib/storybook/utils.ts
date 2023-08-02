@@ -23,7 +23,7 @@ export function traverse(
       res[key] = isRecord(value)
         ? traverse(value, f, path.concat(key))
         : Array.isArray(value)
-        ? value.map((val) => (isRecord(value) ? traverse(val, f, path.concat(key)) : f(key, val, path)))
+        ? value.map((val) => (isRecord(val) ? traverse(val, f, path.concat(key)) : f(key, val, path)))
         : value;
     }
   }

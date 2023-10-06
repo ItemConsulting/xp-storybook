@@ -8,18 +8,19 @@ export function deserializeJsonEntries(
   parsedMatchers: MatcherMap,
   parsedJavaTypes: Record<string, string>
 ): Record<string, unknown> {
-  log.info("hallo")
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
-    if (javaType && typeof value === "string") {
-      return deserializeJavaObjects(value, javaType);
-    } else if (typeof value === "string" && isJsonString(value)) {
+
+    if (typeof value === "string" && isJsonString(value)) {
       try {
         return JSON.parse(value);
       } catch (e) {
         log.warning(`Could not parse "${key}" as JSON: ` + value);
       }
+    } else if (javaType && typeof value === "string") {
+      return deserializeJavaObjects(value, javaType);
     }
+
     return value;
   });
 }
@@ -57,7 +58,6 @@ function stringToRegex(str: string): RegExp | undefined {
 }
 
 export function deserializeJavaObjects(value: string, type: string): unknown {
-  log.info("String from deseralizer is %s ", JSON.stringify(value, null, 2))
   switch (type) {
     case "zonedDateTime":
       return ZonedDateTime.parse(value);
@@ -65,7 +65,6 @@ export function deserializeJavaObjects(value: string, type: string): unknown {
       return LocalDateTime.parse(value);
     case "number":
       return Number.parseInt(value);
-    case "string":
     default:
       return value;
   }

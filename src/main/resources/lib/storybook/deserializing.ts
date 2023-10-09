@@ -10,17 +10,15 @@ export function deserializeJsonEntries(
 ): Record<string, unknown> {
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
-
-    if (typeof value === "string" && isJsonString(value)) {
+    if (javaType && typeof value === "string") {
+      return deserializeJavaObjects(value, javaType);
+    } else if (typeof value === "string" && isJsonString(value)) {
       try {
         return JSON.parse(value);
       } catch (e) {
         log.warning(`Could not parse "${key}" as JSON: ` + value);
       }
-    } else if (javaType && typeof value === "string") {
-      return deserializeJavaObjects(value, javaType);
     }
-
     return value;
   });
 }
@@ -65,6 +63,7 @@ export function deserializeJavaObjects(value: string, type: string): unknown {
       return LocalDateTime.parse(value);
     case "number":
       return Number.parseInt(value);
+    case "string":
     default:
       return value;
   }

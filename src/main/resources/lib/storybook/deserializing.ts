@@ -8,7 +8,6 @@ export function deserializeJsonEntries(
   parsedMatchers: MatcherMap,
   parsedJavaTypes: Record<string, string>
 ): Record<string, unknown> {
-  log.info("hallo")
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
     if (javaType && typeof value === "string") {
@@ -57,7 +56,6 @@ function stringToRegex(str: string): RegExp | undefined {
 }
 
 export function deserializeJavaObjects(value: string, type: string): unknown {
-  log.info("String from deseralizer is %s ", JSON.stringify(value, null, 2))
   switch (type) {
     case "zonedDateTime":
       return ZonedDateTime.parse(value);

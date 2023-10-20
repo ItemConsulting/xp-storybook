@@ -18,6 +18,8 @@ dependencies {
   include "no.api.freemarker:freemarker-java8:2.1.0"
   include 'com.github.tineikt:xp-lib-freemarker:2.0.3'
   include 'no.item:lib-xp-time:1.0.2'
+  include 'com.enonic.lib:lib-thymeleaf:2.0.1'
+
 }
 
 repositories {

@@ -62,7 +62,7 @@ export function deserializeJavaObjects(value: string, type: string): unknown {
     case "localDateTime":
       return LocalDateTime.parse(value);
     case "number":
-      return Number.parseInt(value);
+      return parseInt(value);
     case "region":
       return JSON.parse(value);
     case "string":

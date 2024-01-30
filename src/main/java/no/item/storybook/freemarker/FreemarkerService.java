@@ -1,4 +1,4 @@
-package no.item.storybook;
+package no.item.storybook.freemarker;
 
 import com.enonic.xp.portal.PortalRequest;
 import com.enonic.xp.portal.PortalRequestAccessor;

@@ -1,17 +1,18 @@
 import { parseMatchers, deserializeJsonEntries } from "/lib/storybook/deserializing";
-import { isFile, isTextTemplate, render, type File, type TextTemplate } from "/lib/storybook/thymeleaf";
+import { renderFile, renderInlineTemplate } from "/lib/storybook/thymeleaf";
 import { split } from "/lib/storybook/utils";
 import {
   findRegions,
   getRegionComponents,
   isRegion,
+  isComponentDescriptor,
   type ComponentDescriptor,
   type Component,
-  isComponentDescriptor,
 } from "/lib/storybook/regions";
 import type { Request, Response } from "@item-enonic-types/global/controller";
 
-type ViewMap = Record<ComponentDescriptor, TextTemplate | File>;
+type RenderParams = { template: string; filePath?: string } | { template?: never; filePath: string };
+type ViewMap = Record<ComponentDescriptor, RenderParams>;
 
 const HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -26,13 +27,15 @@ export function all(req: Request): Response<string> {
   }
 
   try {
-    const { view, views, model, components } = parseParams(req.params);
+    const parsedParams = parseParams(req.params);
+    const { template, filePath, model, components, views } = parsedParams;
+    const renderParams = { filePath, template };
 
-    if (view) {
-      const renderedBody = render(view, model);
+    if (isRenderParams(renderParams)) {
+      const renderedBody = render(renderParams, model);
       const body = components.reduce(
         (str, component) => insertChildComponents(str, views, component, model, model.locale),
-        renderedBody
+        renderedBody,
       );
 
       return {
@@ -58,31 +61,23 @@ export function all(req: Request): Response<string> {
 }
 
 type ParsedParams = {
-  view?: File | TextTemplate;
-  views: Record<ComponentDescriptor, TextTemplate | File>;
+  template?: string;
+  filePath?: string;
+  views: ViewMap;
   model: Record<string, unknown>;
   components: Component[];
 };
 
 function parseParams(params: Request["params"]): ParsedParams {
-  const { template, baseDirPath, filePath, javaTypes, matchers, ...extra } = params;
+  const { template, filePath, javaTypes, matchers, ...extra } = params;
   const [views, rawModel] = split(extra, (value, key) => isComponentDescriptor(key));
   const parsedMatchers = parseMatchers(JSON.parse(matchers ?? "{}"));
   const parsedJavaTypes = JSON.parse(javaTypes ?? "{}");
   const model = deserializeJsonEntries(rawModel, parsedMatchers, parsedJavaTypes);
 
   return {
-    view: template
-      ? {
-          template,
-          baseDirPath,
-        }
-      : filePath && baseDirPath
-      ? {
-          filePath,
-          baseDirPath,
-        }
-      : undefined,
+    template,
+    filePath,
     views: parseViews(views),
     model,
     components: parsedMatchers.region ? getRegionComponents(findRegions(model, parsedMatchers.region)) : [],
@@ -93,7 +88,7 @@ function parseViews(rec: Record<string, string | undefined>): ViewMap {
   return Object.keys(rec).reduce<ViewMap>((res, key) => {
     const value = JSON.parse(rec[key] ?? "{}");
 
-    if (isComponentDescriptor(key) && (isTextTemplate(value) || isFile(value))) {
+    if (isComponentDescriptor(key) && isRenderParams(value)) {
       res[key] = value;
     }
 
@@ -103,10 +98,10 @@ function parseViews(rec: Record<string, string | undefined>): ViewMap {
 
 function insertChildComponents(
   body: string,
-  views: Record<ComponentDescriptor, TextTemplate | File>,
+  views: ViewMap,
   component: Component,
   model: Record<string, unknown>,
-  locale?: unknown
+  locale?: unknown,
 ): string {
   const view = views[component.descriptor];
 
@@ -120,7 +115,7 @@ function insertChildComponents(
     render(view, {
       locale,
       ...component.config,
-    })
+    }),
   );
 
   if (component.type !== "layout") {
@@ -128,7 +123,21 @@ function insertChildComponents(
   } else {
     return getRegionComponents(Object.values(component.config).filter(isRegion)).reduce(
       (str, comp) => insertChildComponents(str, views, comp, model, locale),
-      renderedBody
+      renderedBody,
     );
   }
+}
+
+function render<T = unknown>(view: RenderParams, model: T): string {
+  if ("template" in view && typeof view.template === "string") {
+    return renderInlineTemplate<T>(view.template, model);
+  } else {
+    return renderFile<T>(view.filePath, model);
+  }
+}
+
+function isRenderParams(value: unknown): value is RenderParams {
+  const params = value as RenderParams;
+
+  return params.template !== undefined || params.filePath !== undefined;
 }

@@ -1,24 +1,12 @@
-export type TextTemplate = {
-  template: string;
-  baseDirPath?: string;
-};
-
-export type File = {
-  filePath: string;
-  baseDirPath: string;
-};
-
 type ThymeleafService = {
-  newFileProcessor(): {
+  newFileProcessor(baseDirPath: string): {
     model: ScriptValue;
-    baseDirPath: string;
     filePath: string;
     process(): string;
   };
 
-  newInlineTemplateProcessor(): {
+  newInlineTemplateProcessor(baseDirPath: string): {
     model: ScriptValue;
-    baseDirPath?: string;
     template: string;
     process(): string;
   };
@@ -29,51 +17,40 @@ type ThymeleafService = {
  */
 const service = __.newBean<ThymeleafService>("no.item.storybook.thymeleaf.ThymeleafService");
 
-export function render<T = unknown>(view: File | TextTemplate, model: T): string {
-  return isTextTemplate(view) ? renderInlineTemplate<T>(view, model) : renderFile<T>(view, model);
-}
+export function renderFile<T = unknown>(filePath: string, model: T): string {
+  const processor = service.newFileProcessor(getBaseDirPath());
 
-/**
- * This function renders a view using Freemarker.
- *
- * @param {File} view path and base resource path
- * @param {object} model Model that is passed to the view.
- * @returns {string} The rendered output.
- */
-export function renderFile<T = unknown>(view: File, model: T): string {
-  const processor = service.newFileProcessor();
-
-  processor.baseDirPath = view.baseDirPath;
-  processor.filePath = view.filePath;
+  //processor.baseDirPath = getBaseDirPath(filePath);
+  processor.filePath = cleanFilePath(filePath);
   processor.model = __.toScriptValue(model);
 
   return processor.process();
 }
 
 /**
- * This function renders a view using Freemarker.
- *
- * @param {TextTemplate} view inline template or local file path
- * @param {object} model Model that is passed to the view.
- * @returns {string} The rendered output.
+ * This function renders a template using Thymeleaf.
  */
-export function renderInlineTemplate<T = unknown>(view: TextTemplate, model: T): string {
-  const processor = service.newInlineTemplateProcessor();
+export function renderInlineTemplate<T = unknown>(template: string, model: T): string {
+  const processor = service.newInlineTemplateProcessor(getBaseDirPath());
 
-  if (view.baseDirPath) {
-    processor.baseDirPath = view.baseDirPath;
+  processor.template = template;
+  processor.model = __.toScriptValue(model);
+
+  return processor.process();
+}
+
+export function getBaseDirPath(): string {
+  const baseDirPath = app.config.xpResourcesDirPath;
+
+  if (!baseDirPath) {
+    throw new Error(`Please configure "xpResourcesDirPath" in your "no.item.storybook.cfg".`);
   }
-  processor.template = view.template;
-  processor.model = __.toScriptValue(model);
 
-  return processor.process();
+  return baseDirPath;
 }
 
-export function isFile(value: unknown): value is File {
-  const file = value as File;
-  return file?.filePath !== undefined && file?.baseDirPath !== undefined;
-}
+function cleanFilePath(filePath: string): string {
+  const index = filePath.indexOf("?");
 
-export function isTextTemplate(value: unknown): value is TextTemplate {
-  return (value as TextTemplate)?.template !== undefined;
+  return index === -1 ? filePath : filePath.substring(0, index);
 }

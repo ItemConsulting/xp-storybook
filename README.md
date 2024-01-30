@@ -5,7 +5,7 @@ render [Freemarker templates](https://github.com/tineikt/xp-lib-freemarker/) wit
 
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
-> [!WARNING]  
+> [!CAUTION]  
 > This application should **never** be deployed in production! An attacker can use this application to render any content on your domain.
 
 ## Configuration

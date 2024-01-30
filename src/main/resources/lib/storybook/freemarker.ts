@@ -17,7 +17,7 @@ type FreemarkerService = {
 /**
  * Freemarker template related functions.
  */
-const service = __.newBean<FreemarkerService>("no.item.storybook.FreemarkerService");
+const service = __.newBean<FreemarkerService>("no.item.storybook.freemarker.FreemarkerService");
 
 /**
  * This function renders a view using Freemarker.

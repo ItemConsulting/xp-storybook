@@ -1,4 +1,4 @@
-package no.item.storybook;
+package no.item.storybook.freemarker;
 
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;

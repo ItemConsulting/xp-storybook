@@ -1,4 +1,4 @@
-package no.item.storybook;
+package no.item.storybook.freemarker;
 
 import com.enonic.xp.resource.ResourceKey;
 import com.enonic.xp.resource.ResourceProblemException;
@@ -11,24 +11,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 
-public final class FreemarkerFileProcessor {
+public final class FreemarkerInlineTemplateProcessor {
 	private String baseDirPath;
-	private String filePath;
 	private ScriptValue model;
+  private String textTemplate;
 	private final Map<String, TemplateDirectiveModel> viewFunctions;
-	private final static Logger log = LoggerFactory.getLogger(FreemarkerFileProcessor.class);
+	private final static Logger log = LoggerFactory.getLogger(FreemarkerInlineTemplateProcessor.class);
 
 	private static final Configuration CONFIGURATION = new Configuration(Configuration.VERSION_2_3_31);
 
 	public static void setupFreemarker() {
 		CONFIGURATION.setLogTemplateExceptions(false);
 		CONFIGURATION.setTagSyntax(Configuration.AUTO_DETECT_TAG_SYNTAX);
-    CONFIGURATION.setDefaultEncoding("UTF-8");
+        CONFIGURATION.setDefaultEncoding("UTF-8");
 
 		CONFIGURATION.setSharedVariable("component", new ComponentDirective());
 
@@ -38,15 +37,15 @@ public final class FreemarkerFileProcessor {
 
 		//CONFIGURATION.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);		// Throws exceptions to log file
 		CONFIGURATION.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);      // Shows exceptions on screen
-    CONFIGURATION.setObjectWrapper(new Java8ObjectWrapper(Configuration.VERSION_2_3_31));
+        CONFIGURATION.setObjectWrapper(new Java8ObjectWrapper(Configuration.VERSION_2_3_31));
 	}
 
-	public FreemarkerFileProcessor(Map<String, TemplateDirectiveModel> viewFunctions) {
+	public FreemarkerInlineTemplateProcessor(Map<String, TemplateDirectiveModel> viewFunctions) {
 		this.viewFunctions = viewFunctions;
 	}
 
-	public void setFilePath(final String filePath) {
-		this.filePath = filePath;
+	public void setTemplate(final String template) {
+		this.textTemplate = template;
 	}
 
 	public void setBaseDirPath(final String baseDirPath) {
@@ -70,15 +69,15 @@ public final class FreemarkerFileProcessor {
 	}
 
 	private String doProcess() throws IOException, TemplateException {
-		final Map<String, Object> map = model != null ? model.getMap() : Maps.newHashMap();
-		map.putAll(viewFunctions);
+		final Map<String, Object> map = this.model != null ? this.model.getMap() : Maps.newHashMap();
+		map.putAll(this.viewFunctions);
     map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPath));
-    map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
-    CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
+    if (baseDirPath != null) {
+      CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
+    }
 
-    String name = filePath.replace(baseDirPath, "");
-    Template template = new Template(name, new FileReader(filePath), CONFIGURATION);
+    Template template = new Template(null, this.textTemplate, CONFIGURATION);
 
 		StringWriter sw = new StringWriter();
     template.process(map, sw);
@@ -87,18 +86,22 @@ public final class FreemarkerFileProcessor {
 	}
 
 	private RuntimeException handleError(final TemplateException e) {
+    // TODO This probably doesn't work
+		final ResourceKey resource = e.getTemplateSourceName() != null ? ResourceKey.from(e.getTemplateSourceName()) : null;
+
 		return ResourceProblemException.create()
 				.lineNumber(e.getLineNumber())
+				.resource(resource)
 				.cause(e)
 				.message(e.getMessageWithoutStackTop())
 				.build();
 	}
 
 	private RuntimeException handleError(final IOException e) {
-		String error = "IO with the script.";
+		String error = "IO with the script. " + e.getMessage();
 		log.error(error, e);
 
-		return new RuntimeException(e);
+		return new RuntimeException(error, e);
 	}
 
 	private RuntimeException handleError(final RuntimeException e) {

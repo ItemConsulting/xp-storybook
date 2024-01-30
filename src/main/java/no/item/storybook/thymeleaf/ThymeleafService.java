@@ -8,7 +8,6 @@ import com.google.common.collect.Sets;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.dialect.IDialect;
 import org.thymeleaf.standard.StandardDialect;
-
 import java.util.Set;
 
 public final class ThymeleafService
@@ -29,14 +28,19 @@ public final class ThymeleafService
         this.engine.setDialects( dialects );
     }
 
-    public ThymeleafProcessor newProcessor()
+    public ThymeleafFileProcessor newFileProcessor(String baseDirPath)
     {
-        return new ThymeleafProcessor( this.engine, createViewFunctions() );
+        return new ThymeleafFileProcessor(getTemplateEngine(baseDirPath), createViewFunctions(baseDirPath));
     }
 
-    private ThymeleafViewFunctions createViewFunctions()
+    public ThymeleafInlineProcessor newInlineTemplateProcessor(String baseDirPath)
     {
-        final ThymeleafViewFunctions functions = new ThymeleafViewFunctions();
+        return new ThymeleafInlineProcessor(getTemplateEngine(baseDirPath), createViewFunctions(baseDirPath));
+    }
+
+    private ThymeleafViewFunctions createViewFunctions(String baseDirPath)
+    {
+        final ThymeleafViewFunctions functions = new ThymeleafViewFunctions(baseDirPath);
         functions.viewFunctionService = this.context.getService( ViewFunctionService.class ).get();
         functions.portalRequest = PortalRequestAccessor.get();
         return functions;
@@ -46,6 +50,17 @@ public final class ThymeleafService
     public void initialize( final BeanContext context )
     {
         this.context = context;
-        this.engine.setTemplateResolver( new TemplateResolverImpl( this.context ) );
+    }
+
+    private TemplateEngine getTemplateEngine(String baseDirPath) {
+        if(!engine.isInitialized()) {
+            StorybookTemplateResolver resolver = new StorybookTemplateResolver();
+            resolver.setPrefix(baseDirPath);
+            resolver.setSuffix(".html");
+
+            this.engine.setTemplateResolver(resolver);
+        }
+
+        return engine;
     }
 }

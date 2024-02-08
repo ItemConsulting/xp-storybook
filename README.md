@@ -14,6 +14,7 @@ You need to create a configuration file: **XP_HOME/config/no.item.storybook.cfg*
 
 ```ini
 iAmNotFoolishEnoughToDeployThisInProduction=true
+xpResourcesDirPath=/home/ubuntu/code/my-xp-project/src/main/resources
 ```
 
 ## Deploying

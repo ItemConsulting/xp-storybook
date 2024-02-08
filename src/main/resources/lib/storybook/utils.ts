@@ -10,10 +10,14 @@ export function pick(value: unknown, path: string[]): undefined | string {
   return res as string | undefined;
 }
 
+export function substringAfter(str: string, delimiter: string): string {
+  return str.substring(str.indexOf(delimiter) + delimiter.length);
+}
+
 export function traverse(
   obj: Record<string, unknown>,
   f: (key: string, value: unknown, path: string[]) => unknown,
-  path: string[] = []
+  path: string[] = [],
 ): Record<string, unknown> {
   const res: Record<string, unknown> = {};
 
@@ -23,8 +27,8 @@ export function traverse(
       res[key] = isRecord(value)
         ? traverse(value, f, path.concat(key))
         : Array.isArray(value)
-        ? value.map((val) => (isRecord(val) ? traverse(val, f, path.concat(key)) : f(key, val, path)))
-        : value;
+          ? value.map((val) => (isRecord(val) ? traverse(val, f, path.concat(key)) : f(key, val, path)))
+          : value;
     }
   }
 
@@ -33,7 +37,7 @@ export function traverse(
 
 export function filterObject<T>(
   rec: Record<string, T>,
-  predicate: (value: T, key: string) => boolean
+  predicate: (value: T, key: string) => boolean,
 ): Record<string, T> {
   return Object.keys(rec).reduce<Record<string, T>>((res, key) => {
     if (predicate(rec[key], key)) {
@@ -55,12 +59,16 @@ export function split<T>(record: Record<string, T>, predicate: (value: T, key: s
 
       return tuple;
     },
-    [{}, {}]
+    [{}, {}],
   );
 }
 
 export function flatMap<A, B>(arr: Array<A>, f: (as: A) => Array<B>): Array<B> {
   return arr.reduce<B[]>((res, val) => res.concat(f(val)), []);
+}
+
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

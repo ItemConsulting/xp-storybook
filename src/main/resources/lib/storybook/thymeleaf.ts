@@ -1,27 +1,36 @@
 type ThymeleafService = {
-  newFileProcessor(baseDirPath: string): {
+  newFileProcessor(baseDirPath?: string): {
     model: ScriptValue;
     filePath: string;
     process(): string;
   };
 
-  newInlineTemplateProcessor(baseDirPath: string): {
+  newInlineTemplateProcessor(baseDirPath?: string): {
     model: ScriptValue;
     template: string;
     process(): string;
   };
 };
 
+export type RenderParams = string | { template: string };
+
 /**
  * Freemarker template related functions.
  */
 const service = __.newBean<ThymeleafService>("no.item.storybook.thymeleaf.ThymeleafService");
 
-export function renderFile<T = unknown>(filePath: string, model: T): string {
-  const processor = service.newFileProcessor(getBaseDirPath());
+export function render<T = unknown>(params: RenderParams, model: T): string {
+  if (typeof params === "string") {
+    return renderFile<T>(params, model);
+  } else {
+    return renderInlineTemplate<T>(params.template, model);
+  }
+}
 
-  //processor.baseDirPath = getBaseDirPath(filePath);
-  processor.filePath = cleanFilePath(filePath);
+export function renderFile<T = unknown>(id: string, model: T): string {
+  const processor = service.newFileProcessor(app.config.xpResourcesDirPath);
+
+  processor.filePath = "/" + id;
   processor.model = __.toScriptValue(model);
 
   return processor.process();
@@ -31,26 +40,10 @@ export function renderFile<T = unknown>(filePath: string, model: T): string {
  * This function renders a template using Thymeleaf.
  */
 export function renderInlineTemplate<T = unknown>(template: string, model: T): string {
-  const processor = service.newInlineTemplateProcessor(getBaseDirPath());
+  const processor = service.newInlineTemplateProcessor(app.config.xpResourcesDirPath);
 
   processor.template = template;
   processor.model = __.toScriptValue(model);
 
   return processor.process();
-}
-
-export function getBaseDirPath(): string {
-  const baseDirPath = app.config.xpResourcesDirPath;
-
-  if (!baseDirPath) {
-    throw new Error(`Please configure "xpResourcesDirPath" in your "no.item.storybook.cfg".`);
-  }
-
-  return baseDirPath;
-}
-
-function cleanFilePath(filePath: string): string {
-  const index = filePath.indexOf("?");
-
-  return index === -1 ? filePath : filePath.substring(0, index);
 }

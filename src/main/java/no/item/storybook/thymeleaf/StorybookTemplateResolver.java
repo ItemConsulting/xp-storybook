@@ -32,8 +32,6 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
         if (templateResolutionAttributes != null && templateResolutionAttributes.get("sbType") == "inline") {
             return new StringTemplateResource(template);  // TODO Set basePath to be used to find referenced
         } else {
-            System.out.println("------------resourceName " + resourceName);
-
             return new FileTemplateResource(resourceName, characterEncoding);
         }
     }

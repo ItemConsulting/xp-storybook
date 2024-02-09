@@ -24,6 +24,10 @@ renderMode=freemarker
 | `xpResourcesDirPath`                          | The resources directory in your XP-project.                                                                                                                                            |
 | `renderMode` (optional)                       | If the template language can not be determined by the file extension or `renderMode` query parameter, this fallback value will be used. Legal options are: `freemarker` or `thymeleaf` |
 
+## Getting started
+
+You will find information on how to set up your project in the [xp-storybook-utils documentation](https://github.com/ItemConsulting/xp-storybook-utils).
+
 ## Deploying
 
 ### Building

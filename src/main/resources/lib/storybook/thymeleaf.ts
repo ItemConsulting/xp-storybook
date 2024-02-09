@@ -14,9 +14,6 @@ type ThymeleafService = {
 
 export type RenderParams = string | { template: string };
 
-/**
- * Freemarker template related functions.
- */
 const service = __.newBean<ThymeleafService>("no.item.storybook.thymeleaf.ThymeleafService");
 
 export function render<T = unknown>(params: RenderParams, model: T): string {
@@ -36,9 +33,6 @@ export function renderFile<T = unknown>(id: string, model: T): string {
   return processor.process();
 }
 
-/**
- * This function renders a template using Thymeleaf.
- */
 export function renderInlineTemplate<T = unknown>(template: string, model: T): string {
   const processor = service.newInlineTemplateProcessor(app.config.xpResourcesDirPath);
 

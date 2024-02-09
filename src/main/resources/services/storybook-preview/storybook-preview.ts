@@ -72,8 +72,12 @@ function resolveMode(req: Request): Mode {
     return MODE_FREEMARKER;
   } else if (req.rawPath.endsWith(".html")) {
     return MODE_THYMELEAF;
+  } else if (app.config.renderMode === MODE_FREEMARKER || app.config.renderMode === MODE_THYMELEAF) {
+    return app.config.renderMode;
   }
 
-  log.warning("Can not resolve render mode. Defaulting to Freemarker.");
+  log.warning(
+    `Can not resolve render mode. Use "renderMode={thymeleaf,freemarker}" query param to change. Defaulting to Freemarker.`,
+  );
   return MODE_FREEMARKER;
 }

@@ -17,8 +17,6 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
         super();
     }
 
-
-
     @Override
     public void setUseDecoupledLogic(final boolean useDecoupledLogic) {
         if (useDecoupledLogic) {

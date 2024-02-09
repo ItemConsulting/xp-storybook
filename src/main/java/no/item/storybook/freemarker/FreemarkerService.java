@@ -1,4 +1,4 @@
-package no.item.storybook;
+package no.item.storybook.freemarker;
 
 import com.enonic.xp.portal.PortalRequest;
 import com.enonic.xp.portal.PortalRequestAccessor;
@@ -8,12 +8,16 @@ import com.enonic.xp.script.bean.ScriptBean;
 import freemarker.template.TemplateDirectiveModel;
 import no.tine.xp.lib.freemarker.PortalViewFunction;
 import no.tine.xp.lib.freemarker.ViewFunctionSpec;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class FreemarkerService implements ScriptBean {
   private BeanContext context;
 
-  private List<ViewFunctionSpec> viewFunctions;
+  private final List<ViewFunctionSpec> viewFunctions;
 
   public FreemarkerService() {
     viewFunctions = new ArrayList<>();

@@ -1,11 +1,11 @@
 # Storybook Server integration for Enonic XP
 
 This application integrates with [Storybook Server renderer](https://www.npmjs.com/package/@storybook/server) and can
-render [Freemarker templates](https://github.com/tineikt/xp-lib-freemarker/) with the args from Storybook.
+render [Freemarker templates](https://github.com/tineikt/xp-lib-freemarker/) or [Thymeleaf templates](https://github.com/enonic/lib-thymeleaf) with the args from Storybook.
 
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
-> [!WARNING]  
+> [!CAUTION]  
 > This application should **never** be deployed in production! An attacker can use this application to render any content on your domain.
 
 ## Configuration
@@ -14,7 +14,15 @@ You need to create a configuration file: **XP_HOME/config/no.item.storybook.cfg*
 
 ```ini
 iAmNotFoolishEnoughToDeployThisInProduction=true
+xpResourcesDirPath=/home/ubuntu/code/my-xp-project/src/main/resources
+renderMode=freemarker
 ```
+
+| Config key                                    | Value                                                                                                                                                                                  |
+|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `iAmNotFoolishEnoughToDeployThisInProduction` | You will set this to `true` to indicate that you understand that this must **never be deployed** on a server open to the internet.                                                     |
+| `xpResourcesDirPath`                          | The resources directory in your XP-project.                                                                                                                                            |
+| `renderMode` (optional)                       | If the template language can not be determined by the file extension or `renderMode` query parameter, this fallback value will be used. Legal options are: `freemarker` or `thymeleaf` |
 
 ## Deploying
 

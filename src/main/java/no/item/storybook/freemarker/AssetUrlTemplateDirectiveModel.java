@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
-public class AssetUrlTemplateDirectiveModel  implements TemplateDirectiveModel {
+public class AssetUrlTemplateDirectiveModel implements TemplateDirectiveModel {
   @Override
   public void execute(Environment env, Map params, TemplateModel[] loopVars, TemplateDirectiveBody body) throws IOException {
     try (Writer out = env.getOut()) {

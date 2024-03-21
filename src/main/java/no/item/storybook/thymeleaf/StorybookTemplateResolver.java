@@ -1,5 +1,6 @@
 package no.item.storybook.thymeleaf;
 
+import org.apache.commons.lang.StringUtils;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.cache.ICacheEntryValidity;
 import org.thymeleaf.cache.NonCacheableCacheEntryValidity;
@@ -9,6 +10,8 @@ import org.thymeleaf.templateresource.FileTemplateResource;
 import org.thymeleaf.templateresource.ITemplateResource;
 import org.thymeleaf.templateresource.StringTemplateResource;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
 
 
@@ -29,6 +32,13 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
   protected ITemplateResource computeTemplateResource(final IEngineConfiguration configuration, final String ownerTemplate, final String template, final String resourceName, final String characterEncoding, final Map<String, Object> templateResolutionAttributes) {
     if (templateResolutionAttributes != null && templateResolutionAttributes.get("sbType") == "inline") {
       return new StringTemplateResource(template);  // TODO Set basePath to be used to find referenced
+    } else if (ownerTemplate != null && template.startsWith(".")) { // Resolves relative filepath
+      try {
+        String path = Paths.get(this.getPrefix(), StringUtils.substringBeforeLast(ownerTemplate, "/"), template).toFile().getCanonicalPath();
+        return new FileTemplateResource(path, characterEncoding);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     } else {
       return new FileTemplateResource(resourceName, characterEncoding);
     }

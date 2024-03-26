@@ -30,13 +30,14 @@ export function insertChildComponents(
     }),
   );
 
-  if (component.type !== "layout") {
-    return renderedBody;
-  } else {
+  // is is layout-component
+  if ("regions" in component) {
     return getRegionComponents(Object.values(component.config).filter(isRegion)).reduce(
       (str, comp) => insertChildComponents(str, views, comp, model, renderFn, locale),
       renderedBody,
     );
+  } else {
+    return renderedBody;
   }
 }
 

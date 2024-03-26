@@ -51,12 +51,7 @@ public final class ThymeleafInlineProcessor {
     try {
       final Context context = new Context();
       context.setVariables(this.parameters);
-
-      Map<String, Object> resolutionAttributes = new HashMap<>() {{
-        put("sbType", "inline");
-      }};
-
-      final TemplateSpec spec = new TemplateSpec(template, null, this.mode, resolutionAttributes);
+      final TemplateSpec spec = new TemplateSpec(template, this.mode);
       return this.engine.process(spec, context);
     } catch (final RuntimeException e) {
       throw handleException(e);

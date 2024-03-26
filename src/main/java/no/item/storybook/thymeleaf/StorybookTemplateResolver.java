@@ -1,6 +1,9 @@
 package no.item.storybook.thymeleaf;
 
+import no.item.storybook.freemarker.FreemarkerFileProcessor;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.cache.ICacheEntryValidity;
 import org.thymeleaf.cache.NonCacheableCacheEntryValidity;
@@ -30,7 +33,7 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
 
   @Override
   protected ITemplateResource computeTemplateResource(final IEngineConfiguration configuration, final String ownerTemplate, final String template, final String resourceName, final String characterEncoding, final Map<String, Object> templateResolutionAttributes) {
-    if (templateResolutionAttributes != null && templateResolutionAttributes.get("sbType") == "inline") {
+    if (isHtmlContent(template)) {
       return new StringTemplateResource(template);  // TODO Set basePath to be used to find referenced
     } else if (ownerTemplate != null && template.startsWith(".")) { // Resolves relative filepath
       try {
@@ -48,4 +51,9 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
   protected ICacheEntryValidity computeValidity(final IEngineConfiguration configuration, final String ownerTemplate, final String template, final Map<String, Object> templateResolutionAttributes) {
     return NonCacheableCacheEntryValidity.INSTANCE;
   }
+
+  private boolean isHtmlContent(String template) {
+    return template.contains("<") && template.contains(">");
+  }
 }
+

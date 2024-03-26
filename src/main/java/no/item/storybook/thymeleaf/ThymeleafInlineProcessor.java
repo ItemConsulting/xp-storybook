@@ -2,7 +2,9 @@ package no.item.storybook.thymeleaf;
 
 import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.TemplateSpec;
 import org.thymeleaf.context.Context;
@@ -11,6 +13,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public final class ThymeleafInlineProcessor {
   private final TemplateEngine engine;
@@ -43,37 +46,20 @@ public final class ThymeleafInlineProcessor {
     }
   }
 
-  public String process() {
-    return doProcess();
-  }
-
-  private String doProcess() {
+  public String process() throws Throwable {
     try {
       final Context context = new Context();
       context.setVariables(this.parameters);
       final TemplateSpec spec = new TemplateSpec(template, this.mode);
       return this.engine.process(spec, context);
     } catch (final RuntimeException e) {
-      throw handleException(e);
+      Optional<Throwable> templateProcessingException = Streams.findLast(
+        Throwables.getCausalChain(e)
+          .stream()
+          .filter(((throwable) -> throwable instanceof TemplateProcessingException))
+      );
+
+      throw templateProcessingException.orElse(e);
     }
-  }
-
-  private RuntimeException handleException(final RuntimeException e) {
-    if (e instanceof TemplateProcessingException) {
-      return handleException((TemplateProcessingException) e);
-    }
-
-    return e;
-  }
-
-  private RuntimeException handleException(final TemplateProcessingException e) {
-    final int lineNumber = e.getLine() != null ? e.getLine() : 0;
-    String message = e.getMessage();
-
-    return ResourceProblemException.create().
-      lineNumber(lineNumber).
-      cause(e).
-      message(message).
-      build();
   }
 }

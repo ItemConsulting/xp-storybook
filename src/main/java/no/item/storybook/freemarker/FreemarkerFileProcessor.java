@@ -2,7 +2,9 @@ package no.item.storybook.freemarker;
 
 import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import freemarker.template.*;
 import no.api.freemarker.java8.Java8ObjectWrapper;
 import no.tine.xp.lib.freemarker.ComponentDirective;
@@ -14,6 +16,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Optional;
 
 public final class FreemarkerFileProcessor {
   private final static Logger log = LoggerFactory.getLogger(FreemarkerFileProcessor.class);
@@ -55,14 +58,10 @@ public final class FreemarkerFileProcessor {
     this.model = model;
   }
 
-  public String process() {
+  public String process() throws Throwable {
     try {
       return doProcess();
-    } catch (final TemplateException e) {
-      throw handleError(e);
-    } catch (final IOException e) {
-      throw handleError(e);
-    } catch (final RuntimeException e) {
+    } catch (final Exception e) {
       throw handleError(e);
     }
   }
@@ -84,22 +83,16 @@ public final class FreemarkerFileProcessor {
     return sw.toString();
   }
 
-  private RuntimeException handleError(final TemplateException e) {
-    return ResourceProblemException.create()
-      .lineNumber(e.getLineNumber())
-      .cause(e)
-      .message(e.getMessageWithoutStackTop())
-      .build();
-  }
+  private RuntimeException handleError(final Exception e) throws Throwable {
 
-  private RuntimeException handleError(final IOException e) {
-    String error = "IO with the script.";
-    log.error(error, e);
+    Optional<Throwable> templateProcessingException = Streams.findLast(
+      Throwables.getCausalChain(e)
+        .stream()
+        .filter(((throwable) -> throwable instanceof freemarker.template.TemplateException))
+    );
 
-    return new RuntimeException(e);
-  }
+    System.out.println("--------------------" + e.getClass().getName() + " " + e.getMessage());
 
-  private RuntimeException handleError(final RuntimeException e) {
-    return e;
+    throw templateProcessingException.orElse(e);
   }
 }

@@ -3,17 +3,21 @@ package no.item.storybook.freemarker;
 import com.enonic.xp.resource.ResourceKey;
 import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
 import freemarker.template.*;
 import no.api.freemarker.java8.Java8ObjectWrapper;
 import no.tine.xp.lib.freemarker.ComponentDirective;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.thymeleaf.exceptions.TemplateProcessingException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Optional;
 
 public final class FreemarkerInlineTemplateProcessor {
   private final static Logger log = LoggerFactory.getLogger(FreemarkerInlineTemplateProcessor.class);
@@ -55,14 +59,10 @@ public final class FreemarkerInlineTemplateProcessor {
     this.model = model;
   }
 
-  public String process() {
+  public String process() throws Throwable {
     try {
       return doProcess();
-    } catch (final TemplateException e) {
-      throw handleError(e);
-    } catch (final IOException e) {
-      throw handleError(e);
-    } catch (final RuntimeException e) {
+    } catch (final Exception e) {
       throw handleError(e);
     }
   }
@@ -84,26 +84,16 @@ public final class FreemarkerInlineTemplateProcessor {
     return sw.toString();
   }
 
-  private RuntimeException handleError(final TemplateException e) {
-    // TODO This probably doesn't work
-    final ResourceKey resource = e.getTemplateSourceName() != null ? ResourceKey.from(e.getTemplateSourceName()) : null;
+  private RuntimeException handleError(final Exception e) throws Throwable {
 
-    return ResourceProblemException.create()
-      .lineNumber(e.getLineNumber())
-      .resource(resource)
-      .cause(e)
-      .message(e.getMessageWithoutStackTop())
-      .build();
-  }
+    Optional<Throwable> templateProcessingException = Streams.findLast(
+      Throwables.getCausalChain(e)
+        .stream()
+        .filter(((throwable) -> throwable instanceof freemarker.template.TemplateException))
+    );
 
-  private RuntimeException handleError(final IOException e) {
-    String error = "IO with the script. " + e.getMessage();
-    log.error(error, e);
+    System.out.println("--------------------" + e.getClass().getName() + " " + e.getMessage());
 
-    return new RuntimeException(error, e);
-  }
-
-  private RuntimeException handleError(final RuntimeException e) {
-    return e;
+    throw templateProcessingException.orElse(e);
   }
 }

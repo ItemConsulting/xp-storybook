@@ -91,8 +91,6 @@ public final class FreemarkerFileProcessor {
         .filter(((throwable) -> throwable instanceof freemarker.template.TemplateException))
     );
 
-    System.out.println("--------------------" + e.getClass().getName() + " " + e.getMessage());
-
     throw templateProcessingException.orElse(e);
   }
 }

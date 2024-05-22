@@ -1,7 +1,5 @@
 package no.item.storybook.freemarker;
 
-import com.enonic.xp.resource.ResourceKey;
-import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -11,7 +9,6 @@ import no.api.freemarker.java8.Java8ObjectWrapper;
 import no.tine.xp.lib.freemarker.ComponentDirective;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.thymeleaf.exceptions.TemplateProcessingException;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +68,7 @@ public final class FreemarkerInlineTemplateProcessor {
     final Map<String, Object> map = this.model != null ? this.model.getMap() : Maps.newHashMap();
     map.putAll(this.viewFunctions);
     map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPath));
+    map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
     if (baseDirPath != null) {
       CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
@@ -91,8 +89,6 @@ public final class FreemarkerInlineTemplateProcessor {
         .stream()
         .filter(((throwable) -> throwable instanceof freemarker.template.TemplateException))
     );
-
-    System.out.println("--------------------" + e.getClass().getName() + " " + e.getMessage());
 
     throw templateProcessingException.orElse(e);
   }

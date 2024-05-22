@@ -38,7 +38,7 @@ public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
 
   private ResourceBundle getResourceBundle(Map params) throws MalformedURLException {
     Locale locale = params.containsKey("locale") ? Locale.forLanguageTag(params.get("locale").toString()) : Locale.ROOT;
-    File file = new File(baseDirPath + File.separator + "site" + File.separator + "i18n");
+    File file = new File(baseDirPath + File.separator + "i18n");
     URL[] urls = {file.toURI().toURL()};
     ClassLoader loader = new URLClassLoader(urls);
 

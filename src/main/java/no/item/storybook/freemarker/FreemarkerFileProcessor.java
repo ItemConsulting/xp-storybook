@@ -1,10 +1,12 @@
 package no.item.storybook.freemarker;
 
-import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
+import freemarker.cache.FileTemplateLoader;
+import freemarker.cache.MultiTemplateLoader;
+import freemarker.cache.TemplateLoader;
 import freemarker.template.*;
 import no.api.freemarker.java8.Java8ObjectWrapper;
 import no.tine.xp.lib.freemarker.ComponentDirective;
@@ -15,6 +17,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +25,7 @@ public final class FreemarkerFileProcessor {
   private final static Logger log = LoggerFactory.getLogger(FreemarkerFileProcessor.class);
   private static final Configuration CONFIGURATION = new Configuration(Configuration.VERSION_2_3_31);
   private final Map<String, TemplateDirectiveModel> viewFunctions;
-  private String baseDirPath;
+  private List<String> baseDirPaths;
   private String filePath;
   private ScriptValue model;
 
@@ -50,8 +53,8 @@ public final class FreemarkerFileProcessor {
     this.filePath = filePath;
   }
 
-  public void setBaseDirPath(final String baseDirPath) {
-    this.baseDirPath = baseDirPath;
+  public void setBaseDirPaths(final List<String> baseDirPaths) {
+    this.baseDirPaths = baseDirPaths;
   }
 
   public void setModel(final ScriptValue model) {
@@ -69,16 +72,40 @@ public final class FreemarkerFileProcessor {
   private String doProcess() throws IOException, TemplateException {
     final Map<String, Object> map = model != null ? model.getMap() : Maps.newHashMap();
     map.putAll(viewFunctions);
-    map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPath));
+    map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPaths));
     map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
-    CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
+    TemplateLoader[] loaders = this.baseDirPaths.stream()
+      .map(baseDir -> {
+        try {
+          return new FileTemplateLoader(new File(baseDir));
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      })
+      .toArray(TemplateLoader[]::new);
 
-    String name = filePath.replace(baseDirPath, "");
-    Template template = new Template(name, new FileReader(filePath), CONFIGURATION);
+    MultiTemplateLoader multiTemplateLoader = new MultiTemplateLoader(loaders);
+
+    CONFIGURATION.setTemplateLoader(multiTemplateLoader);
 
     StringWriter sw = new StringWriter();
-    template.process(map, sw);
+
+    for(int i=0; i < this.baseDirPaths.size(); i++) {
+      try {
+        String baseDirPath = this.baseDirPaths.get(i);
+        Template template = new Template(this.filePath, new FileReader(baseDirPath + File.separator + filePath), CONFIGURATION);
+        template.process(map, sw);
+        break;
+      } catch (IOException e) {
+        // If file was not found in last directory, throw the exception
+        if (i == this.baseDirPaths.size() - 1) {
+          throw e;
+        } else {
+          log.warn(e.getMessage());
+        }
+      }
+    }
 
     return sw.toString();
   }

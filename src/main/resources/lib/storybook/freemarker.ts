@@ -1,14 +1,14 @@
 type FreemarkerService = {
   newFileProcessor(): {
     model: ScriptValue;
-    baseDirPath?: string;
+    baseDirPaths: string[];
     filePath: string;
     process(): string;
   };
 
   newInlineTemplateProcessor(): {
     model: ScriptValue;
-    baseDirPath?: string;
+    baseDirPaths: string[];
     template: string;
     process(): string;
   };
@@ -25,8 +25,8 @@ export function render<T = unknown>(params: RenderParams, model: T): string {
 export function renderFile<T = unknown>(id: string, model: T): string {
   const processor = service.newFileProcessor();
 
-  processor.baseDirPath = app.config.xpResourcesDirPath;
-  processor.filePath = app.config.xpResourcesDirPath + "/" + id;
+  processor.baseDirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
+  processor.filePath = id;
   processor.model = __.toScriptValue(model);
 
   return processor.process();
@@ -35,9 +35,13 @@ export function renderFile<T = unknown>(id: string, model: T): string {
 export function renderInlineTemplate<T = unknown>(template: string, model: T): string {
   const processor = service.newInlineTemplateProcessor();
 
-  processor.baseDirPath = app.config.xpResourcesDirPath;
+  processor.baseDirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
   processor.template = template;
   processor.model = __.toScriptValue(model);
 
   return processor.process();
+}
+
+function getResourcesDirPaths(str: string | undefined): string[] {
+  return str?.split(",").map((str) => str.trim()) ?? [];
 }

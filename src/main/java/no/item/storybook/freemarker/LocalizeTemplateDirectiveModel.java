@@ -11,15 +11,16 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
-  private final String baseDirPath;
+  private final List<String> baseDirPaths;
 
-  public LocalizeTemplateDirectiveModel(String baseDirPath) {
-    this.baseDirPath = baseDirPath;
+  public LocalizeTemplateDirectiveModel(List<String> baseDirPaths) {
+    this.baseDirPaths = baseDirPaths;
   }
 
   @Override
@@ -36,10 +37,19 @@ public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
     }
   }
 
-  private ResourceBundle getResourceBundle(Map params) throws MalformedURLException {
+  private ResourceBundle getResourceBundle(Map params) {
     Locale locale = params.containsKey("locale") ? Locale.forLanguageTag(params.get("locale").toString()) : Locale.ROOT;
-    File file = new File(baseDirPath + File.separator + "i18n");
-    URL[] urls = {file.toURI().toURL()};
+
+    URL[] urls = baseDirPaths.stream()
+      .map(baseDirPath -> new File(baseDirPath + File.separator + "i18n"))
+      .map(file -> {
+        try {
+          return file.toURI().toURL();
+        } catch (MalformedURLException e) {
+          throw new RuntimeException(e);
+        }
+      }).toArray(URL[]::new);
+
     ClassLoader loader = new URLClassLoader(urls);
 
     return ResourceBundle.getBundle("phrases", locale, loader);

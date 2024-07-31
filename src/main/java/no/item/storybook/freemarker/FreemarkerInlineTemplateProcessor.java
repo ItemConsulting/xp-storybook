@@ -4,6 +4,9 @@ import com.enonic.xp.script.ScriptValue;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
+import freemarker.cache.FileTemplateLoader;
+import freemarker.cache.MultiTemplateLoader;
+import freemarker.cache.TemplateLoader;
 import freemarker.template.*;
 import no.api.freemarker.java8.Java8ObjectWrapper;
 import no.tine.xp.lib.freemarker.ComponentDirective;
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,7 +24,7 @@ public final class FreemarkerInlineTemplateProcessor {
   private final static Logger log = LoggerFactory.getLogger(FreemarkerInlineTemplateProcessor.class);
   private static final Configuration CONFIGURATION = new Configuration(Configuration.VERSION_2_3_31);
   private final Map<String, TemplateDirectiveModel> viewFunctions;
-  private String baseDirPath;
+  private List<String> baseDirPaths;
   private ScriptValue model;
   private String textTemplate;
 
@@ -48,8 +52,8 @@ public final class FreemarkerInlineTemplateProcessor {
     this.textTemplate = template;
   }
 
-  public void setBaseDirPath(final String baseDirPath) {
-    this.baseDirPath = baseDirPath;
+  public void setBaseDirPaths(final List<String> baseDirPaths) {
+    this.baseDirPaths = baseDirPaths;
   }
 
   public void setModel(final ScriptValue model) {
@@ -67,11 +71,22 @@ public final class FreemarkerInlineTemplateProcessor {
   private String doProcess() throws IOException, TemplateException {
     final Map<String, Object> map = this.model != null ? this.model.getMap() : Maps.newHashMap();
     map.putAll(this.viewFunctions);
-    map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPath));
+    map.put("localize", new LocalizeTemplateDirectiveModel(this.baseDirPaths));
     map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
-    if (baseDirPath != null) {
-      CONFIGURATION.setDirectoryForTemplateLoading(new File(baseDirPath));
+    if (this.baseDirPaths != null) {
+      TemplateLoader[] loaders = this.baseDirPaths.stream()
+        .map(baseDir -> {
+          try {
+            return new FileTemplateLoader(new File(baseDir));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        })
+        .toArray(TemplateLoader[]::new);
+
+      MultiTemplateLoader multiTemplateLoader = new MultiTemplateLoader(loaders);
+      CONFIGURATION.setTemplateLoader(multiTemplateLoader);
     }
 
     Template template = new Template(null, this.textTemplate, CONFIGURATION);

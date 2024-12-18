@@ -32,13 +32,17 @@ export function insertChildComponents(
 
   // is is layout-component
   if ("regions" in component) {
-    return getRegionComponents(Object.values(component.config).filter(isRegion)).reduce(
+    return getRegionComponents(objectValues(component.config).filter(isRegion)).reduce(
       (str, comp) => insertChildComponents(str, views, comp, model, renderFn, locale),
       renderedBody,
     );
   } else {
     return renderedBody;
   }
+}
+
+function objectValues<T>(obj: Record<string, T>): T[] {
+  return Object.keys(obj).map((key) => obj[key]);
 }
 
 function isRegion(value: unknown): value is Region {
@@ -51,7 +55,7 @@ export function getRegionComponents(regions: Region[]): Component[] {
 }
 
 export function findRegions(rec: Record<string, unknown>, region: RegExp): Array<Region> {
-  return Object.values(filterObject(rec, (val, key) => region.test(key))).filter(isRegion);
+  return objectValues(filterObject(rec, (val, key) => region.test(key))).filter(isRegion);
 }
 
 export function isComponentDescriptor(value: string): value is ComponentDescriptor {

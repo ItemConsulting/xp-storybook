@@ -1,8 +1,8 @@
 plugins {
   id 'java'
   id 'maven-publish'
-  id "com.github.node-gradle.node" version '5.0.0'
-  id 'com.enonic.xp.app' version '3.4.0'
+  id "com.github.node-gradle.node" version "7.1.0"
+  id "com.enonic.xp.app" version "3.5.2"
 }
 
 app {
@@ -17,19 +17,20 @@ dependencies {
   implementation "com.enonic.xp:script-api:${xpVersion}"
   include "no.api.freemarker:freemarker-java8:2.1.0"
   include 'com.github.tineikt:xp-lib-freemarker:2.0.3'
-  include 'no.item:lib-xp-time:1.0.2'
+  include 'no.item:lib-xp-time:1.0.4'
   include 'com.enonic.lib:lib-thymeleaf:2.0.1'
 }
 
 repositories {
   mavenCentral()
   xp.enonicRepo()
+  maven { url "https://repo.itemtest.no/releases" }
   maven { url 'https://jitpack.io' }
 }
 
 node {
   download = true
-  version = '17.4.0'
+  version = "22.12.0"
 }
 
 task npmInstallForce(type: NpmTask) {
@@ -74,8 +75,18 @@ def nodeEnvironment() {
 }
 
 publishing {
+  repositories {
+    maven {
+      name = "itemtestRepository"
+      url = "https://repo.itemtest.no/releases"
+      credentials(PasswordCredentials)
+      authentication {
+        basic(BasicAuthentication)
+      }
+    }
+  }
   publications {
-    mavenJava(MavenPublication) {
+    maven(MavenPublication) {
       from components.java
       groupId group
       artifactId projectName

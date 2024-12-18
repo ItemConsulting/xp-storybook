@@ -6,7 +6,7 @@ export type MatcherMap = Record<string, RegExp>;
 export function deserializeJsonEntries(
   params: Record<string, string | undefined>,
   parsedMatchers: MatcherMap,
-  parsedJavaTypes: Record<string, string>
+  parsedJavaTypes: Record<string, string>,
 ): Record<string, unknown> {
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
@@ -15,7 +15,7 @@ export function deserializeJsonEntries(
     } else if (typeof value === "string" && isJsonString(value)) {
       try {
         return JSON.parse(value);
-      } catch (e) {
+      } catch {
         log.warning(`Could not parse "${key}" as JSON: ` + value);
       }
     }

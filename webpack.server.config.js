@@ -39,7 +39,7 @@ function listEntries(extensions, ignoreList) {
   const CLIENT_FILES = glob.sync(`${RESOURCES_PATH}/assets/**/*.${extensions}`);
   const IGNORED_FILES = R.pipe(
     R.map((entry) => path.join(RESOURCES_PATH, entry)),
-    R.concat(CLIENT_FILES)
+    R.concat(CLIENT_FILES),
   )(ignoreList);
   const SERVER_FILES = glob.sync(`${RESOURCES_PATH}/**/*.${extensions}`, { absolute: false, ignore: IGNORED_FILES });
   return SERVER_FILES.map((entry) => path.relative(RESOURCES_PATH, entry));
@@ -68,10 +68,9 @@ function addTypeScriptSupport(cfg) {
     addPlugin(
       new ProvidePlugin({
         "Object.assign": [path.join(__dirname, RESOURCES_PATH, "polyfills"), "assign"],
-        "Object.values": [path.join(__dirname, RESOURCES_PATH, "polyfills"), "values"],
-      })
+      }),
     ),
-    prependExtensions([".ts", ".json"])
+    prependExtensions([".ts", ".json"]),
   )(cfg);
 }
 

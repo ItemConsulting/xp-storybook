@@ -3,7 +3,8 @@
 This application integrates with [Storybook Server renderer](https://www.npmjs.com/package/@storybook/server) and can
 render [Freemarker templates](https://github.com/tineikt/xp-lib-freemarker/) or [Thymeleaf templates](https://github.com/enonic/lib-thymeleaf) with the args from Storybook.
 
-[![](https://jitpack.io/v/no.item/xp-storybook.svg)](https://jitpack.io/#no.item/xp-storybook)
+[![](https://repo.itemtest.no/api/badge/latest/releases/no/item/xp-storybook)](https://repo.itemtest.no/#/releases/no/item/xp-storybook)
+
 
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
@@ -47,8 +48,3 @@ Deploy locally for testing purposes:
 ```bash
 enonic project deploy
 ```
-
-## Deploy to Jitpack
-
-Go to the [Jitpack page for xp-storybook](https://jitpack.io/#no.item/xp-storybook) to deploy from Github (after
-[creating a new versioned release](https://github.com/ItemConsulting/xp-storybook/releases/new)).

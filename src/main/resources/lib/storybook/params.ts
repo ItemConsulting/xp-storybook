@@ -9,7 +9,6 @@ import {
   isRenderParams,
 } from "/lib/storybook/regions";
 import { deserializeJsonEntries, isJsonString, parseMatchers } from "/lib/storybook/deserializing";
-import type { Request } from "@item-enonic-types/global/controller";
 
 export type ViewMap = Record<ComponentDescriptor, RenderParams>;
 export type ParsedParams = {
@@ -19,7 +18,7 @@ export type ParsedParams = {
   components: Component[];
 };
 
-export function parseParams(params: Request["params"]): ParsedParams {
+export function parseParams(params: Record<string, string>): ParsedParams {
   const { template, javaTypes, matchers, ...extra } = params;
   const [views, rawModel] = split(extra, (value, key) => isComponentDescriptor(key));
   const parsedMatchers = parseMatchers(JSON.parse(matchers ?? "{}"));

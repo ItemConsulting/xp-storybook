@@ -3,42 +3,28 @@
   "version": "1.0.4",
   "description": "Creates a preview for storybook server",
   "private": true,
-  "scripts": {
-    "build:server": "webpack --config webpack.server.config.js --color",
-    "build": "run-p -c build:*",
-    "dist:server": "cross-env NODE_ENV=production webpack --config webpack.server.config.js --color --hide-modules",
-    "dist": "run-p -c dist:*",
-    "lint": "eslint --cache \"src/main/resources/**/*.ts\"",
-    "release": "npm run build",
-    "versioning": "npx changeset version && npm i --package-lock-only && NEW_VERSION=$(node -p \"require('./package.json').version\") && sed -i \"s/version.*/version = ${NEW_VERSION}/\" gradle.properties"
-  },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
-    "@babel/register": "^7.25.9",
     "@changesets/cli": "^2.27.10",
-    "@enonic-types/core": "7.14.4",
-    "@item-enonic-types/global": "^7.13.1",
-    "@item-enonic-types/lib-testing": "^7.13.0",
+    "@enonic-types/core": "^7.15.0-A2",
+    "@enonic-types/global": "^7.15.0-A2",
     "@item-enonic-types/lib-time": "^1.0.4",
-    "babel-loader": "^9.2.1",
-    "browserslist-config-enonic": "^1.0.8",
-    "cross-env": "^7.0.3",
+    "@swc/core": "^1.10.4",
+    "@types/node": "^22.10.5",
+    "concurrently": "^9.1.2",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "file-loader": "^6.2.0",
-    "glob": "^11.0.0",
-    "npm-run-all": "^4.1.5",
     "prettier": "^3.4.2",
-    "ramda": "^0.30.1",
-    "ts-loader": "^9.5.1",
+    "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.1",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^5.1.4"
+    "typescript-eslint": "^8.19.0"
   },
-  "browserslist": [
-    "extends browserslist-config-enonic"
-  ]
+  "scripts": {
+    "build": "node tsup/anyServerFiles.js && npx tsup -d build/resources/main",
+    "check": "concurrently -c auto -g --timings npm:check:types npm:lint",
+    "check:types": "npx tsc --noEmit -p src/main/resources/tsconfig.json",
+    "lint": "eslint --cache \"src/main/resources/**/*.ts\"",
+    "release": "npm run build",
+    "versioning": "npx changeset version && npm i --package-lock-only && NEW_VERSION=$(node -p \"require('./package.json').version\") && sed -i \"s/version.*/version = ${NEW_VERSION}/\" gradle.properties"
+  }
 }

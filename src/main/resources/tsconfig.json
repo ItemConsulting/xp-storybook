@@ -1,6 +1,6 @@
 {
-  // This file should only include files that configures the build system.
-  // It should ignore all actual source files.
+  // This file should only include Enonic XP server-side source files.
+  // It should exclude any client-side source files.
 
   // Read more about tsconfig.json at:
   // https://www.typescriptlang.org/tsconfig
@@ -22,17 +22,18 @@
   // codebase - it simply changes what the include setting finds.
   "exclude": [
     "**/*.d.ts",
-    "src/**/*.*", // Avoid Enonic XP source files
   ],
 
   "compilerOptions": {
-    // Do NOT add this as it will resolve tsup to the local tsup folder, rather
-    // than the tsup node_module.
-    // "baseUrl": ".",
+    // A series of entries which re-map imports to lookup locations relative
+    // to the baseUrl if set, or to the tsconfig file itself otherwise.
+    "paths": {
+      "/lib/xp/*": ["../../../node_modules/@enonic-types/lib-*"],
+      "/lib/*": [ "../../../node_modules/@item-enonic-types/lib-*" ,"./lib/*"],
+      "/*": ["./*"],
+    },
 
-    "lib": [
-      "es2023" // string.replaceAll
-    ],
+    "skipLibCheck": true,
 
     // By default all visible ”@types” packages are included in your compilation.
     // Packages in node_modules/@types of any enclosing folder are considered visible.
@@ -42,7 +43,13 @@
     // This feature differs from typeRoots in that it is about specifying only the exact
     // types you want included, whereas typeRoots supports saying you want particular folders.
     "types": [
-      "node"
+      // Make the types for the Enonic XP Global objects and functions
+      // available in the global scope.
+      // https://developer.enonic.com/docs/xp/stable/framework/globals
+      // app, exports, log, require, resolve
+      // https://developer.enonic.com/docs/xp/stable/framework/java-bridge
+      // __.newBean, __.toNativeObject, __.nullOrValue
+      "@enonic-types/global"
     ],
   },
 }

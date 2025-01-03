@@ -72,7 +72,15 @@ export function capitalize(str: string): string {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && value.constructor?.name === "Object" && !isJavaClass(value);
+  return value != null && isObject(value) && !isJavaClass(value);
+}
+
+function isObject(obj: unknown): boolean {
+  return obj.constructor.toString().match(/\w+/g)[1] === "Object";
+}
+
+export function endsWith(str: string, suffix: string): boolean {
+  return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
 /**

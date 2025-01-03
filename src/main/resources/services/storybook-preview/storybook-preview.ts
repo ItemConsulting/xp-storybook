@@ -1,9 +1,9 @@
 import { render as renderFreemarker } from "/lib/storybook/freemarker";
 import { render as renderThymeleaf } from "/lib/storybook/thymeleaf";
-import { capitalize, substringAfter } from "/lib/storybook/utils";
+import { capitalize, endsWith, substringAfter } from "/lib/storybook/utils";
 import { insertChildComponents } from "/lib/storybook/regions";
 import { parseParams } from "/lib/storybook/params";
-import type { Request, Response } from "@item-enonic-types/global/controller";
+import type { Request, Response } from "@enonic-types/core";
 
 const MODE_FREEMARKER = "freemarker";
 const MODE_THYMELEAF = "thymeleaf";
@@ -14,7 +14,7 @@ const HEADERS = {
   "Access-Control-Allow-Origin": "*",
 };
 
-export function all(req: Request): Response<string> {
+export function all(req: Request): Response {
   if (app.config.iAmNotFoolishEnoughToDeployThisInProduction !== "true") {
     return {
       status: 401,
@@ -31,7 +31,7 @@ export function all(req: Request): Response<string> {
   const mode = resolveMode(req);
 
   try {
-    const parsedParams = parseParams(req.params);
+    const parsedParams = parseParams(req.params as Record<string, string>);
     const { template, model, components, views } = parsedParams;
     const id = substringAfter(req.path, "/storybook-preview/"); // TODO Make this work on Windows
 
@@ -68,9 +68,9 @@ export function all(req: Request): Response<string> {
 function resolveMode(req: Request): Mode {
   if (req.params.renderMode === MODE_FREEMARKER || req.params.renderMode === MODE_THYMELEAF) {
     return req.params.renderMode;
-  } else if (req.rawPath.endsWith(".ftl")) {
+  } else if (endsWith(req.rawPath, ".ftl")) {
     return MODE_FREEMARKER;
-  } else if (req.rawPath.endsWith(".html")) {
+  } else if (endsWith(req.rawPath, ".html")) {
     return MODE_THYMELEAF;
   } else if (app.config.renderMode === MODE_FREEMARKER || app.config.renderMode === MODE_THYMELEAF) {
     return app.config.renderMode;

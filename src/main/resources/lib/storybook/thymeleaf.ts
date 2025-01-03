@@ -1,3 +1,5 @@
+import type { ScriptValue } from "@enonic-types/core";
+
 type ThymeleafService = {
   newFileProcessor(baseDirPath?: string): {
     model: ScriptValue;

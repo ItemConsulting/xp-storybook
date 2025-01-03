@@ -1,9 +1,8 @@
 import { filterObject, flatMap } from "/lib/storybook/utils";
-import type { Region } from "@enonic-types/core";
-import type { LayoutComponent, PageComponent, PartComponent, ComponentDescriptor } from "@enonic-types/core";
+import type { LayoutComponent, PageComponent, PartComponent, ComponentDescriptor, Region } from "@enonic-types/core";
 import type { ViewMap } from "/lib/storybook/params";
 
-export { ComponentDescriptor } from "@enonic-types/core";
+export type { ComponentDescriptor } from "@enonic-types/core";
 export type RenderParams = string | { template: string };
 export type Component = PageComponent | PartComponent | LayoutComponent;
 

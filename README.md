@@ -24,10 +24,12 @@ renderMode=freemarker
 | Config key                                    | Value                                                                                                                                                                                  |
 |-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `iAmNotFoolishEnoughToDeployThisInProduction` | You will set this to `true` to indicate that you understand that this must **never be deployed** on a server open to the internet.                                                     |
-| `xpResourcesDirPath`                          | The resources directory in your XP-project. This can also be a comma separated string with multiple resource directories (Freemarker only).                                            |
+| `xpResourcesDirPath`                          | The resources directory in your XP-project. This can also be a *comma separated string* with multiple resource directories (Freemarker only).                                          |
 | `renderMode` (optional)                       | If the template language can not be determined by the file extension or `renderMode` query parameter, this fallback value will be used. Legal options are: `freemarker` or `thymeleaf` |
 
 ## Getting started
+
+Install the application from [Enonic Market](https://market.enonic.com/vendors/item-consulting-as/storybook).
 
 You will find information on how to set up your project in the [xp-storybook-utils documentation](https://github.com/ItemConsulting/xp-storybook-utils).
 
@@ -47,4 +49,10 @@ Deploy locally for testing purposes:
 
 ```bash
 enonic project deploy
+```
+
+### Deploy to Maven
+
+```bash
+./gradlew publish -P com.enonic.xp.app.production=true
 ```

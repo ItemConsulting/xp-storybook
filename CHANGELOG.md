@@ -1,5 +1,11 @@
 # xp-storybook
 
+## 1.1.1
+
+### Patch Changes
+
+- 1013d93: Fix issue where undefined values can crash the renderer
+
 ## 1.1.0
 
 ### Minor Changes

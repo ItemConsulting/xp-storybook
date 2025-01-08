@@ -76,7 +76,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isObject(obj: unknown): boolean {
-  return obj.constructor.toString().match(/\w+/g)[1] === "Object";
+  return obj.constructor?.toString().match(/\w+/g)[1] === "Object";
 }
 
 export function endsWith(str: string, suffix: string): boolean {

@@ -1,4 +1,4 @@
-import { LocalDateTime, ZonedDateTime } from "/lib/time";
+import { LocalDate, LocalDateTime, ZonedDateTime } from "/lib/time";
 import { pick, traverse } from "/lib/storybook/utils";
 
 export type MatcherMap = Record<string, RegExp>;
@@ -57,6 +57,8 @@ function stringToRegex(str: string): RegExp | undefined {
 
 export function deserializeJavaObjects(value: string, type: string): unknown {
   switch (type) {
+    case "localDate":
+      return LocalDate.parse(value);
     case "zonedDateTime":
       return ZonedDateTime.parse(value);
     case "localDateTime":

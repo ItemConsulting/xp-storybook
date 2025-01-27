@@ -1,5 +1,11 @@
 # xp-storybook
 
+## 1.2.0
+
+### Minor Changes
+
+- 3b68b67: Add support for deserializing java.time.LocalDate
+
 ## 1.1.1
 
 ### Patch Changes

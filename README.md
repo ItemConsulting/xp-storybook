@@ -37,7 +37,7 @@ You will find information on how to set up your project in the [xp-storybook-uti
 
 ### Building
 
-To build he project run the following code
+To build the project run the following code
 
 ```bash
 enonic project build

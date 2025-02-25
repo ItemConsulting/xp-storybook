@@ -71,7 +71,7 @@ public final class FreemarkerInlineTemplateProcessor {
   private String doProcess() throws IOException, TemplateException {
     final Map<String, Object> map = this.model != null ? this.model.getMap() : Maps.newHashMap();
     map.putAll(this.viewFunctions);
-    map.put("localize", new LocalizeTemplateDirectiveModel(this.baseDirPaths));
+    map.put("localize", new LocalizeTemplateDirectiveModel(this.baseDirPaths.get(0)));
     map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
     if (this.baseDirPaths != null) {

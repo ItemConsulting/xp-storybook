@@ -70,9 +70,14 @@ public final class FreemarkerFileProcessor {
   }
 
   private String doProcess() throws IOException, TemplateException {
+    var baseDirPathWithExistingFile = this.baseDirPaths.stream()
+      .filter(baseDir -> new File(baseDir + File.separator + filePath).exists())
+      .findFirst()
+      .orElse(null);
+
     final Map<String, Object> map = model != null ? model.getMap() : Maps.newHashMap();
     map.putAll(viewFunctions);
-    map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPaths));
+    map.put("localize", new LocalizeTemplateDirectiveModel(baseDirPathWithExistingFile));
     map.put("assetUrl", new AssetUrlTemplateDirectiveModel());
 
     TemplateLoader[] loaders = this.baseDirPaths.stream()

@@ -1,5 +1,11 @@
 # xp-storybook
 
+## 1.3.0
+
+### Minor Changes
+
+- cc6b05f: Fix localize in Freemarker-preview when multiple baseDirPaths
+
 ## 1.2.0
 
 ### Minor Changes

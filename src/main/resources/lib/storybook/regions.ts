@@ -11,7 +11,7 @@ export function insertChildComponents(
   views: ViewMap,
   component: Component,
   model: Record<string, unknown>,
-  renderFn: <T = unknown>(params: RenderParams, model: T) => string,
+  renderFn: (params: RenderParams, model: Record<string, unknown>) => string,
   locale?: unknown,
 ): string {
   const view = views[component.descriptor];

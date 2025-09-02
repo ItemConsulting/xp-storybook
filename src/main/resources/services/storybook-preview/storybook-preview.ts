@@ -68,7 +68,7 @@ export function all(req: Request): Response {
 function resolveMode(req: Request): Mode {
   if (req.params.renderMode === MODE_FREEMARKER || req.params.renderMode === MODE_THYMELEAF) {
     return req.params.renderMode;
-  } else if (endsWith(req.rawPath, ".ftl")) {
+  } else if (endsWith(req.rawPath, ".ftl") || endsWith(req.rawPath, ".ftlh")) {
     return MODE_FREEMARKER;
   } else if (endsWith(req.rawPath, ".html")) {
     return MODE_THYMELEAF;

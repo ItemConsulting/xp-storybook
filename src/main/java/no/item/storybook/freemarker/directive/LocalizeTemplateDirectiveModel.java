@@ -1,4 +1,4 @@
-package no.item.storybook.freemarker;
+package no.item.storybook.freemarker.directive;
 
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
@@ -55,7 +55,7 @@ public class LocalizeTemplateDirectiveModel implements TemplateDirectiveModel {
       return ResourceBundle.getBundle("phrases", locale, loader);
     } catch (MalformedURLException e) {
       log.error("Could not load resource bundle", e);
-      return ResourceBundle.getBundle("phrases", locale);
+      return ResourceBundle.getBundle("phrases", locale); // TODO: Can be another bundle then phrases
     }
   }
 }

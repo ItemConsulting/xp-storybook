@@ -1,9 +1,6 @@
 package no.item.storybook.thymeleaf;
 
-import no.item.storybook.freemarker.FreemarkerFileProcessor;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.cache.ICacheEntryValidity;
 import org.thymeleaf.cache.NonCacheableCacheEntryValidity;

@@ -1,6 +1,8 @@
 import { LocalDate, LocalDateTime, ZonedDateTime } from "/lib/time";
 import { pick, traverse } from "/lib/storybook/utils";
 
+const UN_JSONIFIED_OBJECT_STRING = "[object Object]";
+
 export type MatcherMap = Record<string, RegExp>;
 
 export function deserializeJsonEntries(
@@ -78,7 +80,7 @@ export function isJsonString(str: string): boolean {
 }
 
 function isArrayString(str: string): boolean {
-  return str[0] == "[" && str[1] !== "#" && str[str.length - 1] === "]";
+  return str !== UN_JSONIFIED_OBJECT_STRING && str[0] == "[" && str[1] !== "#" && str[str.length - 1] === "]";
 }
 
 function isObjectString(str: unknown): boolean {

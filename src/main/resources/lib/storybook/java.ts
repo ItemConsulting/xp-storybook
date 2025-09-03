@@ -1,5 +1,3 @@
-import type { ResourceKey, ScriptValue } from "@enonic-types/core";
-
 export type MultiProjectTemplateLoader<Source = unknown> = {
   findTemplateSource(): Source;
   getLastModified(source: Source): number;
@@ -11,25 +9,13 @@ type MultiProjectTemplateLoaderConstructor = {
   new (dirPaths: string[]): MultiProjectTemplateLoader;
 };
 
-export declare class FreemarkerScriptBean {
-  newProcessor(): {
-    process(view: string, model: ScriptValue): string;
-    processInline(template: string, model: ScriptValue): string;
-    getSource(view: ResourceKey, beginColumn: number, beginLine: number, endColumn: number, endLine: number): string;
-  };
-  setTemplateLoader(templateLoader: MultiProjectTemplateLoader): void;
-  useHtmlDebugExceptionHandler(): void;
-  setPortalObject(portal: unknown): void;
-}
-
-export declare class StorybookScriptBean {
-  createLegacyDirectives(baseDirPath: string): Record<string, unknown>;
-  getPortalObject(baseDirPath: string): unknown;
-}
-
 export const MultiProjectTemplateLoader = Java.type<MultiProjectTemplateLoaderConstructor>(
   "no.item.storybook.freemarker.MultiProjectTemplateLoader",
 );
+
+export const TemplateExceptionHandler = Java.type<{
+  HTML_DEBUG_HANDLER: unknown;
+}>("freemarker.template.TemplateExceptionHandler");
 
 export type Path = {
   compareTo(other: Path): number;

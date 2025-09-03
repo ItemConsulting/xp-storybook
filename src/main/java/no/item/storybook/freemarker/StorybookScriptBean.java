@@ -48,6 +48,4 @@ public class StorybookScriptBean implements ScriptBean {
 
     return directives;
   }
-
-
 }

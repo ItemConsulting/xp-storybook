@@ -1,34 +1,24 @@
-import {
-  MultiProjectTemplateLoader,
-  Paths,
-  Files,
-  type FreemarkerScriptBean,
-  type StorybookScriptBean,
-} from "/lib/storybook/java";
+import { render as renderFreemarker, getConfiguration } from "/lib/freemarker";
+import { MultiProjectTemplateLoader, Paths, Files, TemplateExceptionHandler } from "/lib/storybook/java";
 
-export type RenderParams = string | { template: string };
+const storybookService = __.newBean<{
+  createLegacyDirectives(baseDirPath: string): Record<string, unknown>;
+  getPortalObject(baseDirPath: string): unknown;
+}>("no.item.storybook.freemarker.StorybookScriptBean");
 
-const service = __.newBean<FreemarkerScriptBean>("no.item.freemarker.FreemarkerScriptBean");
-const storybookService = __.newBean<StorybookScriptBean>("no.item.storybook.freemarker.StorybookScriptBean");
-
-export function render(view: RenderParams, model: Record<string, unknown>): string {
+export function render(view: string, model: Record<string, unknown>, name?: string): string {
   const dirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
-  const processor = service.newProcessor();
-  const baseDir = isFilePath(view) ? getBaseDirIfFileExists(dirPaths, view) : dirPaths[0];
+  // If view is a filepath, look up if it exists. `name` indicates inline template.
+  const baseDir = name ? dirPaths[0] : getBaseDirIfFileExists(dirPaths, view);
 
-  service.useHtmlDebugExceptionHandler();
-  service.setTemplateLoader(new MultiProjectTemplateLoader(dirPaths));
-  service.setPortalObject(storybookService.getPortalObject(baseDir));
+  const configuration = getConfiguration();
+  configuration.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
+  configuration.setTemplateLoader(new MultiProjectTemplateLoader(dirPaths));
+  configuration.setSharedVariable("portal", storybookService.getPortalObject(baseDir));
 
   addLegacyDirectivesIfNoConflict(model, baseDir);
 
-  return typeof view === "string"
-    ? processor.process(view, __.toScriptValue(model))
-    : processor.processInline(view.template, __.toScriptValue(model));
-}
-
-function isFilePath(params: RenderParams): params is string {
-  return typeof params === "string";
+  return renderFreemarker(view, model, name);
 }
 
 function getResourcesDirPaths(str: string | undefined): string[] {

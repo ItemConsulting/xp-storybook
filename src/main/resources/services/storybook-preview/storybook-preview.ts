@@ -37,7 +37,7 @@ export function all(req: Request): Response {
 
     if (template || id) {
       const renderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
-      const renderedBody = renderFn(template ? { template } : id, model);
+      const renderedBody = template ? renderFn(template, model, id ?? "inline-storybook.ftl") : renderFn(id, model);
       const body = components.reduce(
         (str, component) => insertChildComponents(str, views, component, model, renderFn, model.locale),
         renderedBody,

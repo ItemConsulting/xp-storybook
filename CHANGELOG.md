@@ -1,5 +1,14 @@
 # xp-storybook
 
+## 1.3.0
+
+### Minor Changes
+
+- dc457f6: Use latest version of Freemarker
+- cc6b05f: Fix localize in Freemarker-preview when multiple baseDirPaths
+- dc457f6: Interpret ftlh file extension as Freemarker
+- dc457f6: Add Storybook-compatible version of `PortalObject` where `localize` and `assetUrl` use file system.
+
 ## 1.2.0
 
 ### Minor Changes

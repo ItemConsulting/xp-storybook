@@ -16,16 +16,16 @@ dependencies {
   implementation "com.enonic.xp:core-api:${xpVersion}"
   implementation "com.enonic.xp:portal-api:${xpVersion}"
   include "no.api.freemarker:freemarker-java8:3.0.3"
-  include "no.item:lib-xp-freemarker:2.1.0-SNAPSHOT"
+  include "no.item:lib-xp-freemarker:3.0.0-SNAPSHOT"
   include "no.item:lib-xp-time:1.2.1"
   include "com.enonic.lib:lib-thymeleaf:2.0.1"
 }
 
 repositories {
-  mavenLocal()
   mavenCentral()
   xp.enonicRepo()
   maven { url "https://repo.itemtest.no/releases" }
+  maven { url "https://repo.itemtest.no/snapshots" }
 }
 
 node {

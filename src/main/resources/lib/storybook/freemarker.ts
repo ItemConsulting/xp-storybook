@@ -1,49 +1,56 @@
-import type { ScriptValue } from "@enonic-types/core";
+import { render as renderFreemarker, getConfiguration } from "/lib/freemarker";
+import { MultiProjectTemplateLoader, Paths, Files, TemplateExceptionHandler } from "/lib/storybook/java";
 
-type FreemarkerService = {
-  newFileProcessor(): {
-    model: ScriptValue;
-    baseDirPaths: string[];
-    filePath: string;
-    process(): string;
-  };
+const storybookService = __.newBean<{
+  createLegacyDirectives(baseDirPath: string): Record<string, unknown>;
+  getPortalObject(baseDirPath: string): unknown;
+}>("no.item.storybook.freemarker.StorybookScriptBean");
 
-  newInlineTemplateProcessor(): {
-    model: ScriptValue;
-    baseDirPaths: string[];
-    template: string;
-    process(): string;
-  };
-};
+export function render(view: string, model: Record<string, unknown>, name?: string): string {
+  const dirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
+  // If view is a filepath, look up if it exists. `name` indicates inline template.
+  const baseDir = name ? dirPaths[0] : getBaseDirIfFileExists(dirPaths, view);
 
-export type RenderParams = string | { template: string };
+  const configuration = getConfiguration();
+  configuration.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
+  configuration.setTemplateLoader(new MultiProjectTemplateLoader(dirPaths));
+  configuration.setSharedVariable("portal", storybookService.getPortalObject(baseDir));
 
-const service = __.newBean<FreemarkerService>("no.item.storybook.freemarker.FreemarkerService");
+  addLegacyDirectivesIfNoConflict(model, baseDir);
 
-export function render<T = unknown>(params: RenderParams, model: T): string {
-  return typeof params === "string" ? renderFile(params, model) : renderInlineTemplate(params.template, model);
-}
-
-export function renderFile<T = unknown>(id: string, model: T): string {
-  const processor = service.newFileProcessor();
-
-  processor.baseDirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
-  processor.filePath = id;
-  processor.model = __.toScriptValue(model);
-
-  return processor.process();
-}
-
-export function renderInlineTemplate<T = unknown>(template: string, model: T): string {
-  const processor = service.newInlineTemplateProcessor();
-
-  processor.baseDirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
-  processor.template = template;
-  processor.model = __.toScriptValue(model);
-
-  return processor.process();
+  return renderFreemarker(view, model, name);
 }
 
 function getResourcesDirPaths(str: string | undefined): string[] {
   return str?.split(",").map((str) => str.trim()) ?? [];
+}
+
+function getBaseDirIfFileExists(baseDirPaths: string[], filePath: string): string | undefined {
+  for (const baseDir of baseDirPaths) {
+    if (Files.exists(Paths.get(baseDir, filePath))) {
+      return baseDir;
+    }
+  }
+
+  return undefined;
+}
+
+function addLegacyDirectivesIfNoConflict(model: Record<string, unknown>, baseDir: string): void {
+  const directives = storybookService.createLegacyDirectives(baseDir);
+
+  [
+    "pageUrl",
+    "imageUrl",
+    "attachmentUrl",
+    "componentUrl",
+    "serviceUrl",
+    "processHtml",
+    "imagePlaceholder",
+    "assetUrl",
+    "localize",
+  ]
+    .filter((key) => model[key] === undefined)
+    .forEach((key) => {
+      model[key] = directives[key];
+    });
 }

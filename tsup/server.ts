@@ -51,6 +51,7 @@ export default function buildServerConfig(): Options {
       "/lib/util",
       "/lib/vanilla",
       "/lib/text-encoding",
+      "/lib/freemarker",
       "/lib/thymeleaf",
       /^\/lib\/xp\//,
     ],

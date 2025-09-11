@@ -1,5 +1,12 @@
 # xp-storybook
 
+## 1.4.0
+
+### Minor Changes
+
+- b7dd0ba: Fix failing portal.processHtml function in FreeMarker
+- b7dd0ba: Fix failing inline templating for FreeMarker
+
 ## 1.3.0
 
 ### Minor Changes

@@ -16,35 +16,35 @@ import no.item.storybook.freemarker.directive.LegacyDirectiveModel;
 import no.item.storybook.freemarker.directive.LocalizeTemplateDirectiveModel;
 
 public class StorybookScriptBean implements ScriptBean {
-  private ViewFunctionService service;
-  private PortalUrlService urlService;
-  private Supplier< PortalRequest > requestSupplier;
+  private Supplier<ViewFunctionService> viewFunctionServiceSupplier;
+  private Supplier<PortalUrlService> portalUrlServiceSupplier;
+  private Supplier<PortalRequest> portalRequestSupplier;
 
   @Override
   public void initialize(BeanContext context) {
-    this.service = context.getService(ViewFunctionService.class).get();
-    this.urlService = context.getService(PortalUrlService.class).get();
-    this.requestSupplier = context.getService(PortalRequest.class);
+    this.viewFunctionServiceSupplier = context.getService(ViewFunctionService.class);
+    this.portalUrlServiceSupplier = context.getService(PortalUrlService.class);
+    this.portalRequestSupplier = context.getBinding(PortalRequest.class);
   }
 
   public FreemarkerPortalObject getPortalObject(String baseDirPath) {
-    return new StorybookPortalObject(urlService, service, requestSupplier, baseDirPath);
+    return new StorybookPortalObject(portalUrlServiceSupplier, viewFunctionServiceSupplier, portalRequestSupplier, baseDirPath);
   }
 
   public Map<String, TemplateDirectiveModel> createLegacyDirectives(String baseDirPath) {
     Map<String, TemplateDirectiveModel> directives = new HashMap<>();
 
-    directives.put("pageUrl", new LegacyDirectiveModel(service, "pageUrl", "id", "path", "type"));
-    directives.put("imageUrl", new LegacyDirectiveModel(service, "imageUrl", "id", "path", "format", "scale", "quality", "background", "filter", "type"));
-    directives.put("attachmentUrl", new LegacyDirectiveModel(service, "attachmentUrl", "id", "path", "name", "label", "download", "type"));
-    directives.put("componentUrl", new LegacyDirectiveModel(service, "componentUrl", "id", "path", "component", "type"));
-    directives.put("serviceUrl", new LegacyDirectiveModel(service, "serviceUrl", "service", "application", "type"));
-    directives.put("processHtml", new LegacyDirectiveModel(service, "processHtml", "value", "type"));
-    directives.put("imagePlaceholder", new LegacyDirectiveModel(service, "imagePlaceholder"));
+    directives.put("pageUrl", new LegacyDirectiveModel(viewFunctionServiceSupplier, "pageUrl", "id", "path", "type"));
+    directives.put("imageUrl", new LegacyDirectiveModel(viewFunctionServiceSupplier, "imageUrl", "id", "path", "format", "scale", "quality", "background", "filter", "type"));
+    directives.put("attachmentUrl", new LegacyDirectiveModel(viewFunctionServiceSupplier, "attachmentUrl", "id", "path", "name", "label", "download", "type"));
+    directives.put("componentUrl", new LegacyDirectiveModel(viewFunctionServiceSupplier, "componentUrl", "id", "path", "component", "type"));
+    directives.put("serviceUrl", new LegacyDirectiveModel(viewFunctionServiceSupplier, "serviceUrl", "service", "application", "type"));
+    directives.put("processHtml", new LegacyDirectiveModel(viewFunctionServiceSupplier, "processHtml", "value", "type"));
+    directives.put("imagePlaceholder", new LegacyDirectiveModel(viewFunctionServiceSupplier, "imagePlaceholder"));
     directives.put("assetUrl", new AssetUrlTemplateDirectiveModel());
     directives.put("localize", baseDirPath != null
       ? new LocalizeTemplateDirectiveModel(baseDirPath)
-      : new LegacyDirectiveModel(service, "i18n.localize", "key", "locale"));
+      : new LegacyDirectiveModel(viewFunctionServiceSupplier, "i18n.localize", "key", "locale"));
 
     return directives;
   }

@@ -15,16 +15,17 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class LegacyDirectiveModel implements TemplateDirectiveModel {
-  private final ViewFunctionService viewFunctionService;
+  private final Supplier<ViewFunctionService> viewFunctionServiceSupplier;
   private final String name;
   private final List<String> allowedParams;
 
-  public LegacyDirectiveModel(ViewFunctionService viewFunctionService, String name, String... allowedParams) {
+  public LegacyDirectiveModel(Supplier<ViewFunctionService> viewFunctionServiceSupplier, String name, String... allowedParams) {
     this.name = name;
     this.allowedParams = Arrays.asList(allowedParams);
-    this.viewFunctionService = viewFunctionService;
+    this.viewFunctionServiceSupplier = viewFunctionServiceSupplier;
   }
 
   @SuppressWarnings("unchecked")
@@ -35,7 +36,7 @@ public class LegacyDirectiveModel implements TemplateDirectiveModel {
       .portalRequest(PortalRequestAccessor.get());
 
     Writer out = env.getOut();
-    out.append(this.viewFunctionService.execute(viewFunctionParams).toString());
+    out.append(this.viewFunctionServiceSupplier.get().execute(viewFunctionParams).toString());
     out.close();
   }
 

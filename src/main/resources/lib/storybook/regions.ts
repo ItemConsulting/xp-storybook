@@ -1,9 +1,7 @@
 import { filterObject, flatMap } from "/lib/storybook/utils";
 import type { LayoutComponent, PageComponent, PartComponent, ComponentDescriptor, Region } from "@enonic-types/core";
-import type { ViewMap } from "/lib/storybook/params";
-
+import type { RenderParams, ViewMap } from "/lib/storybook/params";
 export type { ComponentDescriptor } from "@enonic-types/core";
-export type RenderParams = string | { template: string };
 export type Component = PageComponent | PartComponent | LayoutComponent;
 
 export function insertChildComponents(
@@ -14,20 +12,19 @@ export function insertChildComponents(
   renderFn: (params: RenderParams, model: Record<string, unknown>) => string,
   locale?: unknown,
 ): string {
-  const view = views[component.descriptor];
+  const renderParams = views[component.descriptor];
 
-  if (view === undefined) {
+  if (renderParams === undefined) {
     log.warning(`You have not specified a template for the descriptor: "${component.descriptor}"`);
     return body;
   }
 
-  const renderedBody = body.replace(
-    `<!--# COMPONENT ${component.path} -->`,
-    renderFn(view, {
-      locale,
-      ...component.config,
-    }),
-  );
+  const renderedComponent = renderFn(renderParams, {
+    locale,
+    ...component.config,
+  });
+
+  const renderedBody = body.replace(`<!--# COMPONENT ${component.path} -->`, renderedComponent);
 
   // is is layout-component
   if ("regions" in component) {
@@ -59,10 +56,4 @@ export function findRegions(rec: Record<string, unknown>, region: RegExp): Array
 
 export function isComponentDescriptor(value: string): value is ComponentDescriptor {
   return value.indexOf(":") !== -1;
-}
-
-export function isRenderParams(value: unknown): value is RenderParams {
-  const params = value as RenderParams;
-
-  return typeof params === "string" || params.template !== undefined;
 }

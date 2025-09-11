@@ -1,4 +1,5 @@
 import type { ScriptValue } from "@enonic-types/core";
+import type { RenderParams } from "/lib/storybook/params";
 
 type ThymeleafService = {
   newFileProcessor(baseDirPath?: string): {
@@ -14,13 +15,11 @@ type ThymeleafService = {
   };
 };
 
-export type RenderParams = string | { template: string };
-
 const service = __.newBean<ThymeleafService>("no.item.storybook.thymeleaf.ThymeleafService");
 
 export function render(params: RenderParams, model: Record<string, unknown>): string {
-  if (typeof params === "string") {
-    return renderFile(params, model);
+  if (params.type === "file") {
+    return renderFile(params.filePath, model);
   } else {
     return renderInlineTemplate(params.template, model);
   }

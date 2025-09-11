@@ -15,7 +15,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
@@ -27,36 +26,15 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
    * This object provides portal-related functionality for Freemarker templates,
    * including URL generation, localization, and HTML processing capabilities.
    */
-  public StorybookPortalObject(PortalUrlService urlService, ViewFunctionService viewFunctionService, Supplier<PortalRequest> requestSupplier, String baseDirPath) {
-    super(urlService, viewFunctionService, requestSupplier);
+  public StorybookPortalObject(
+    Supplier<PortalUrlService> urlServiceSupplier,
+    Supplier<ViewFunctionService> viewFunctionService,
+    Supplier<PortalRequest> portalRequestSupplier,
+    String baseDirPath
+  ) {
+    super(urlServiceSupplier, viewFunctionService, portalRequestSupplier);
     this.baseDirPath = baseDirPath;
   }
-
-  /**
-   * This function generates a URL pointing to a static file.
-   *
-   * @param path Path to the asset.
-   * @return The generated URL.
-   */
-  @Override
-  public String assetUrl(String path) {
-    return path;
-  }
-
-  /**
-   * This function generates a URL pointing to a static file.
-   *
-   * @param path        Path to the asset.
-   * @param type        URL type. Either `server` (server-relative URL) or `absolute`.
-   * @param application Other application to reference to. Defaults to current application.
-   * @param params      Custom parameters to append to the url.
-   * @return The generated URL.
-   */
-  @Override
-  public String assetUrl(String path, String type, String application, Map<String, String> params) {
-    return path;
-  }
-
 
   /**
    * This function localizes a phrase.
@@ -82,6 +60,14 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
     return localize(key, environment.getLocale().toLanguageTag(), values);
   }
 
+  /**
+   * This function localizes a phrase.
+   *
+   * @param key    The property key.
+   * @param locale A string-representation of a locale. If the locale is not set, the content language is used.
+   * @param values Placeholder values.
+   * @return The localized string.
+   */
   @Override
   public String localize(String key, String locale, List<String> values) {
     return localize(key, locale, values, Lists.newArrayList(), null);
@@ -93,6 +79,7 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
    * @param key    The property key.
    * @param locale A string-representation of a locale. If the locale is not set, the content language is used.
    * @param values Placeholder values.
+   * @param application The name of the application
    * @return The localized string.
    */
   @Override
@@ -102,7 +89,7 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
       return "NOT_TRANSLATED";
     }
 
-    ResourceBundle bundle = getResourceBundle(bundles.get(0));
+    ResourceBundle bundle = getResourceBundle(locale);
 
     if (bundle.keySet().contains(key)) {
       return bundle.getString(key);

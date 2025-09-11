@@ -2,15 +2,27 @@ import { split } from "/lib/storybook/utils";
 import {
   type Component,
   type ComponentDescriptor,
-  type RenderParams,
   findRegions,
   getRegionComponents,
   isComponentDescriptor,
-  isRenderParams,
 } from "/lib/storybook/regions";
 import { deserializeJsonEntries, isJsonString, parseMatchers } from "/lib/storybook/deserializing";
 
+export type FileRenderParams = {
+  type: "file";
+  filePath: string;
+};
+
+export type InlineRenderParams = {
+  type: "inline";
+  template: string;
+  name: string;
+};
+
+export type RenderParams = FileRenderParams | InlineRenderParams;
+
 export type ViewMap = Record<ComponentDescriptor, RenderParams>;
+
 export type ParsedParams = {
   template?: string;
   views: ViewMap;
@@ -35,12 +47,22 @@ export function parseParams(params: Record<string, string>): ParsedParams {
 
 function parseViews(rec: Record<string, string | undefined>): ViewMap {
   return Object.keys(rec).reduce<ViewMap>((res, key) => {
-    const value = isJsonString(rec[key]!) ? JSON.parse(rec[key] ?? "{}") : rec[key];
+    const value = extractInlineTemplate(rec[key], key) ?? { type: "file", filePath: rec[key] };
 
-    if (isComponentDescriptor(key) && isRenderParams(value)) {
+    if (isComponentDescriptor(key)) {
       res[key] = value;
     }
 
     return res;
   }, {});
+}
+
+function extractInlineTemplate(str: string, key: string): InlineRenderParams | undefined {
+  if (!isJsonString(str)) {
+    return undefined;
+  }
+
+  const parsed = JSON.parse(str) as { template?: string };
+
+  return parsed.template ? { type: "inline", template: parsed.template, name: key } : undefined;
 }

@@ -2,7 +2,7 @@ import { render as renderFreemarker } from "/lib/storybook/freemarker";
 import { render as renderThymeleaf } from "/lib/storybook/thymeleaf";
 import { capitalize, endsWith, substringAfter } from "/lib/storybook/utils";
 import { insertChildComponents } from "/lib/storybook/regions";
-import { parseParams } from "/lib/storybook/params";
+import { parseParams, type RenderParams } from "/lib/storybook/params";
 import type { Request, Response } from "@enonic-types/core";
 
 const MODE_FREEMARKER = "freemarker";
@@ -37,7 +37,19 @@ export function all(req: Request): Response {
 
     if (template || id) {
       const renderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
-      const renderedBody = template ? renderFn(template, model, id ?? "inline-storybook.ftl") : renderFn(id, model);
+      const renderParams: RenderParams = template
+        ? {
+            type: "inline",
+            template,
+            name: "inline-storybook.ftl",
+          }
+        : {
+            type: "file",
+            filePath: id,
+          };
+
+      const renderedBody = renderFn(renderParams, model);
+
       const body = components.reduce(
         (str, component) => insertChildComponents(str, views, component, model, renderFn, model.locale),
         renderedBody,

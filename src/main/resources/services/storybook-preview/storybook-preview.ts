@@ -1,95 +1,16 @@
-import { render as renderFreemarker } from "/lib/storybook/freemarker";
-import { render as renderThymeleaf } from "/lib/storybook/thymeleaf";
-import { capitalize, endsWith, substringAfter } from "/lib/storybook/utils";
-import { insertChildComponents } from "/lib/storybook/regions";
-import { parseParams, type RenderParams } from "/lib/storybook/params";
+import { substringAfter } from "/lib/storybook/utils";
 import type { Request, Response } from "@enonic-types/core";
-
-const MODE_FREEMARKER = "freemarker";
-const MODE_THYMELEAF = "thymeleaf";
-
-type Mode = typeof MODE_FREEMARKER | typeof MODE_THYMELEAF;
 
 const HEADERS = {
   "Access-Control-Allow-Origin": "*",
 };
 
 export function all(req: Request): Response {
-  if (app.config.iAmNotFoolishEnoughToDeployThisInProduction !== "true") {
-    return {
-      status: 401,
-      headers: HEADERS,
-    };
-  } else if (app.config.xpResourcesDirPath === undefined) {
-    return {
-      status: 500,
-      body: `Please configure "xpResourcesDirPath" in your "no.item.storybook.cfg".`,
-      headers: HEADERS,
-    };
-  }
+  const { url, scheme, host, port } = req;
+  const path = substringAfter(url, "/storybook-preview");
 
-  const mode = resolveMode(req);
-
-  try {
-    const parsedParams = parseParams(req.params as Record<string, string>);
-    const { template, model, components, views } = parsedParams;
-    const id = substringAfter(req.path, "/storybook-preview/"); // TODO Make this work on Windows
-
-    if (template || id) {
-      const renderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
-      const renderParams: RenderParams = template
-        ? {
-            type: "inline",
-            template,
-            name: "inline-storybook.ftl",
-          }
-        : {
-            type: "file",
-            filePath: id,
-          };
-
-      const renderedBody = renderFn(renderParams, model);
-
-      const body = components.reduce(
-        (str, component) => insertChildComponents(str, views, component, model, renderFn, model.locale),
-        renderedBody,
-      );
-
-      return {
-        status: 200,
-        body,
-        headers: HEADERS,
-      };
-    }
-
-    return {
-      status: 400,
-      body: "You need to provide either <code>id</code> or <code>template</code> query params.",
-      headers: HEADERS,
-    };
-  } catch (e) {
-    log.error(`Could not create ${capitalize(mode)} preview`, e);
-    return {
-      status: 500,
-      body: `<pre style="white-space: pre-wrap;">${e.message}</pre>`,
-      headers: HEADERS,
-    };
-  }
-}
-
-function resolveMode(req: Request): Mode {
-  if (req.params.renderMode === MODE_FREEMARKER || req.params.renderMode === MODE_THYMELEAF) {
-    return req.params.renderMode;
-  } else if (endsWith(req.rawPath, ".ftl") || endsWith(req.rawPath, ".ftlh")) {
-    return MODE_FREEMARKER;
-  } else if (endsWith(req.rawPath, ".html")) {
-    return MODE_THYMELEAF;
-  } else if (app.config.renderMode === MODE_FREEMARKER || app.config.renderMode === MODE_THYMELEAF) {
-    return app.config.renderMode;
-  }
-
-  log.warning(
-    `Can not resolve render mode. Use "renderMode={thymeleaf,freemarker}" query param to change. Defaulting to Freemarker.`,
-  );
-  return MODE_FREEMARKER;
+  return {
+    redirect: `${scheme}://${host}:${port}/webapp/${app.name}${path}`,
+    headers: HEADERS,
+  };
 }

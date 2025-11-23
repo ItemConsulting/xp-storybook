@@ -1,20 +1,21 @@
 import { render as renderFreemarker, getConfiguration } from "/lib/freemarker";
-import { MultiProjectTemplateLoader, Paths, Files, TemplateExceptionHandler } from "/lib/storybook/java";
+import { Paths, Files, TemplateExceptionHandler } from "/lib/storybook/java";
 import type { RenderParams } from "/lib/storybook/params";
 
 const storybookService = __.newBean<{
   createLegacyDirectives(baseDirPath: string): Record<string, unknown>;
   getPortalObject(baseDirPath: string): unknown;
+  getFileAndResourceTemplateLoader(dirPaths: string[], appName?: string): unknown;
 }>("no.item.storybook.freemarker.StorybookScriptBean");
 
 export function render(params: RenderParams, model: Record<string, unknown>): string {
-  const dirPaths = getResourcesDirPaths(app.config.xpResourcesDirPath);
+  const dirPaths = getResourcesDirPaths(params.xpResourcesDirPath);
   // If view is a filepath, look up if it exists. `name` indicates inline template.
   const baseDir = params.type === "file" ? getBaseDirIfFileExists(dirPaths, params.filePath) : dirPaths[0];
 
   const configuration = getConfiguration();
   configuration.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
-  configuration.setTemplateLoader(new MultiProjectTemplateLoader(dirPaths));
+  configuration.setTemplateLoader(storybookService.getFileAndResourceTemplateLoader(dirPaths, params.xpAppName));
   configuration.setSharedVariable("portal", storybookService.getPortalObject(baseDir));
 
   addLegacyDirectivesIfNoConflict(model, baseDir);

@@ -19,14 +19,14 @@ const service = __.newBean<ThymeleafService>("no.item.storybook.thymeleaf.Thymel
 
 export function render(params: RenderParams, model: Record<string, unknown>): string {
   if (params.type === "file") {
-    return renderFile(params.filePath, model);
+    return renderFile(params.filePath, model, params.xpResourcesDirPath);
   } else {
-    return renderInlineTemplate(params.template, model);
+    return renderInlineTemplate(params.template, model, params.xpResourcesDirPath);
   }
 }
 
-export function renderFile(id: string, model: Record<string, unknown>): string {
-  const processor = service.newFileProcessor(app.config.xpResourcesDirPath);
+export function renderFile(id: string, model: Record<string, unknown>, xpResourcesDirPath: string): string {
+  const processor = service.newFileProcessor(xpResourcesDirPath);
 
   processor.filePath = "/" + id;
   processor.model = __.toScriptValue(model);
@@ -34,8 +34,12 @@ export function renderFile(id: string, model: Record<string, unknown>): string {
   return processor.process();
 }
 
-export function renderInlineTemplate(template: string, model: Record<string, unknown>): string {
-  const processor = service.newInlineTemplateProcessor(app.config.xpResourcesDirPath);
+export function renderInlineTemplate(
+  template: string,
+  model: Record<string, unknown>,
+  xpResourcesDirPath: string,
+): string {
+  const processor = service.newInlineTemplateProcessor(xpResourcesDirPath);
 
   processor.template = template;
   processor.model = __.toScriptValue(model);

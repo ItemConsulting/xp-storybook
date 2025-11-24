@@ -1,5 +1,12 @@
 # xp-storybook
 
+## 1.5.0
+
+### Minor Changes
+
+- 5e51c92: Take resourceDirPath and appName as query parameters
+- 5e51c92: Move endpoint to "/webapp/no.item.storybook"
+
 ## 1.4.0
 
 ### Minor Changes

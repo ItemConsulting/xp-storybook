@@ -1,7 +1,7 @@
 # Storybook Server integration for Enonic XP
 
 This application integrates with [Storybook Server renderer](https://www.npmjs.com/package/@storybook/server) and can
-render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-freemarker/) or [Thymeleaf templates](https://github.com/enonic/lib-thymeleaf) with the args from Storybook.
+render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-freemarker/) or [Thymeleaf templates](https://github.com/enonic/lib-thymeleaf) with the `args` from Storybook.
 
 ![Build badge](https://github.com/ItemConsulting/xp-storybook/actions/workflows/main.yml/badge.svg)
 [![](https://repo.itemtest.no/api/badge/latest/releases/no/item/xp-storybook)](https://repo.itemtest.no/#/releases/no/item/xp-storybook)
@@ -18,15 +18,20 @@ You need to create a configuration file: **XP_HOME/config/no.item.storybook.cfg*
 
 ```ini
 iAmNotFoolishEnoughToDeployThisInProduction=true
-xpResourcesDirPath=/home/ubuntu/code/my-xp-project/src/main/resources
-renderMode=freemarker
 ```
 
-| Config key                                    | Value                                                                                                                                                                                  |
-|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `iAmNotFoolishEnoughToDeployThisInProduction` | You will set this to `true` to indicate that you understand that this must **never be deployed** on a server open to the internet.                                                     |
-| `xpResourcesDirPath`                          | The resources directory in your XP-project. This can also be a *comma separated string* with multiple resource directories (FreeMarker only).                                          |
-| `renderMode` (optional)                       | If the template language can not be determined by the file extension or `renderMode` query parameter, this fallback value will be used. Legal options are: `freemarker` or `thymeleaf` |
+The **rendering endpoint** will be exposed at http://localhost:8080/webapp/no.item.storybook. 
+If you have enabled local vhost routing through _com.enonic.xp.web.vhost.cfg_, you need to create a mapping that exposes
+the _webapp_ endpoints:
+
+```ini
+enabled = true
+
+mapping.webapp.host = localhost
+mapping.webapp.source = /webapp
+mapping.webapp.target = /webapp
+mapping.webapp.idProvider.system = default
+```
 
 ## Getting started
 

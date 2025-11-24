@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import no.item.freemarker.FreemarkerPortalObject;
+import no.item.freemarker.PortalComponentDirective;
 import no.item.storybook.freemarker.directive.AssetUrlTemplateDirectiveModel;
 import no.item.storybook.freemarker.directive.LegacyDirectiveModel;
 import no.item.storybook.freemarker.directive.LocalizeTemplateDirectiveModel;
@@ -67,6 +68,7 @@ public class StorybookScriptBean implements ScriptBean {
     directives.put("localize", baseDirPath != null
       ? new LocalizeTemplateDirectiveModel(baseDirPath)
       : new LegacyDirectiveModel(viewFunctionServiceSupplier, "i18n.localize", "key", "locale"));
+    directives.put("component", new PortalComponentDirective());
 
     return directives;
   }

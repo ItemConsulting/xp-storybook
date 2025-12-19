@@ -45,6 +45,7 @@ function addLegacyDirectivesIfNoConflict(model: Record<string, unknown>, baseDir
   const directives = storybookService.createLegacyDirectives(baseDir);
 
   [
+    "component",
     "pageUrl",
     "imageUrl",
     "attachmentUrl",

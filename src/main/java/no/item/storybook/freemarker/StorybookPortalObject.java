@@ -102,15 +102,27 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
     Locale locale = languageTag != null ? Locale.forLanguageTag(languageTag) : Locale.ROOT;
 
     File dir = new File(baseDirPath + File.separator + "i18n");
+    File dir2 = new File(baseDirPath + File.separator + "site" + File.separator + "i18n");
 
-    try {
-      URL url = dir.toURI().toURL();
-      ClassLoader loader = new URLClassLoader(new URL[]{url});
-      return ResourceBundle.getBundle("phrases", locale, loader); // TODO: Can be another bundle then phrases
-    } catch (MalformedURLException e) {
-      log.error("Could not load resource bundle", e);
-      return ResourceBundle.getBundle("phrases", locale);
+    if (dir.exists()) {
+      try {
+        URL url = dir.toURI().toURL();
+        ClassLoader loader = new URLClassLoader(new URL[]{url});
+        return ResourceBundle.getBundle("phrases", locale, loader); // TODO: Can be another bundle then phrases
+      } catch (MalformedURLException e) {
+        log.error("Could not load resource bundle", e);
+      }
+    } else if (dir2.exists()) {
+      try {
+        URL url = dir2.toURI().toURL();
+        ClassLoader loader = new URLClassLoader(new URL[] {url});
+        return ResourceBundle.getBundle("phrases", locale, loader);
+      } catch (MalformedURLException e) {
+        log.error("Could not load resource bundle", e);
+      }
     }
+
+    return ResourceBundle.getBundle("phrases", locale);
   }
 }
 

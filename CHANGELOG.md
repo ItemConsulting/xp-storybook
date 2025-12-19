@@ -1,5 +1,12 @@
 # xp-storybook
 
+## 1.6.0
+
+### Minor Changes
+
+- 3d4febf: Check site directory for i18n-directory if not found under resources
+- ec8323f: Add "component" directive to map of legacy directives
+
 ## 1.5.0
 
 ### Minor Changes

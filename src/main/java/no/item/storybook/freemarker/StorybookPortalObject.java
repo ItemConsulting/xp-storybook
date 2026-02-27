@@ -92,10 +92,18 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
     ResourceBundle bundle = getResourceBundle(locale);
 
     if (bundle.keySet().contains(key)) {
-      return bundle.getString(key);
+      return values.isEmpty() ?  bundle.getString(key) : applyValues(bundle.getString(key), values);
     } else {
       return "NOT_TRANSLATED";
     }
+  }
+
+  private String applyValues(String phrase, List<String> values) {
+    for(int i=0;i<values.size();i++) {
+      phrase = phrase.replaceAll("\\{" + i + "\\}", values.get(i));
+    }
+
+    return phrase;
   }
 
   private ResourceBundle getResourceBundle(String languageTag) {

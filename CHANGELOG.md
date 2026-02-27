@@ -1,5 +1,16 @@
 # xp-storybook
 
+## 1.6.0
+
+### Minor Changes
+
+- 3d4febf: Check site directory for i18n-directory if not found under resources
+- ec8323f: Add "component" directive to map of legacy directives
+
+### Patch Changes
+
+- 4db5ab8: Apply values when using `portal.localize(key, values)`
+
 ## 1.5.0
 
 ### Minor Changes

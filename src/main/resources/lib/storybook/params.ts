@@ -7,6 +7,7 @@ import {
   isComponentDescriptor,
 } from "/lib/storybook/regions";
 import { deserializeJsonEntries, isJsonString, parseMatchers } from "/lib/storybook/deserializing";
+import type { TemplateErrors } from "/lib/storybook/errors";
 
 export type FileRenderParams = {
   type: "file";
@@ -24,6 +25,12 @@ export type InlineRenderParams = {
 };
 
 export type RenderParams = FileRenderParams | InlineRenderParams;
+
+export type RenderFn = (
+  params: RenderParams,
+  model: Record<string, unknown>,
+  templateErrors?: TemplateErrors,
+) => string;
 
 export type ViewMap = Record<ComponentDescriptor, RenderParams>;
 

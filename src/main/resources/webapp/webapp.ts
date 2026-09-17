@@ -1,8 +1,8 @@
-import { render as renderFreemarker } from "/lib/storybook/freemarker";
+import { newTemplateErrors, render as renderFreemarker } from "/lib/storybook/freemarker";
 import { render as renderThymeleaf } from "/lib/storybook/thymeleaf";
 import { capitalize, endsWith, substringAfter } from "/lib/storybook/utils";
 import { insertChildComponents } from "/lib/storybook/regions";
-import { parseParams, type RenderParams } from "/lib/storybook/params";
+import { parseParams, type RenderFn, type RenderParams } from "/lib/storybook/params";
 import type { Request, Response } from "@enonic-types/core";
 
 const MODE_FREEMARKER = "freemarker";
@@ -45,7 +45,10 @@ export function all(req: Request<{ params: QueryParams }>): Response {
     const id = substringAfter(req.path, "/webapp/no.item.storybook/");
 
     if (template || id) {
-      const renderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
+      // FreeMarker renders its errors into the output rather than throwing, so they are collected on the side.
+      const templateErrors = newTemplateErrors();
+      const render: RenderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
+      const renderFn: RenderFn = (params, viewModel) => render(params, viewModel, templateErrors);
       const renderParams: RenderParams = template
         ? {
             type: "inline",
@@ -67,6 +70,17 @@ export function all(req: Request<{ params: QueryParams }>): Response {
         (str, component) => insertChildComponents(str, views, component, model, renderFn, model.locale),
         renderedBody,
       );
+
+      if (templateErrors.hasErrors()) {
+        log.error(`Could not create ${capitalize(mode)} preview\n${templateErrors.getMessage()}`);
+
+        // The body still holds the rendered output, with the errors rendered in place.
+        return {
+          status: 500,
+          body,
+          headers: HEADERS,
+        };
+      }
 
       return {
         status: 200,

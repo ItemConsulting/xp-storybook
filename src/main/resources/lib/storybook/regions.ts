@@ -1,6 +1,6 @@
 import { filterObject, flatMap } from "/lib/storybook/utils";
 import type { LayoutComponent, PageComponent, PartComponent, ComponentDescriptor, Region } from "@enonic-types/core";
-import type { RenderParams, ViewMap } from "/lib/storybook/params";
+import type { RenderFn, ViewMap } from "/lib/storybook/params";
 export type { ComponentDescriptor } from "@enonic-types/core";
 export type Component = PageComponent | PartComponent | LayoutComponent;
 
@@ -9,7 +9,7 @@ export function insertChildComponents(
   views: ViewMap,
   component: Component,
   model: Record<string, unknown>,
-  renderFn: (params: RenderParams, model: Record<string, unknown>) => string,
+  renderFn: RenderFn,
   locale?: unknown,
 ): string {
   const renderParams = views[component.descriptor];

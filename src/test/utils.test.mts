@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import {
   capitalize,
   endsWith,
+  escapeHtml,
   filterObject,
   flatMap,
   pick,
@@ -125,5 +126,19 @@ describe("endsWith", () => {
 
   it("does not match a suffix occurring earlier in the string", () => {
     expect(endsWith("a.ftl.html", ".ftl")).toBe(false);
+  });
+});
+
+describe("escapeHtml", () => {
+  it("escapes the characters that would be read as markup", () => {
+    expect(escapeHtml(`<a href="x">&'</a>`)).toBe("&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;");
+  });
+
+  it("escapes ampersands before the entities it introduces", () => {
+    expect(escapeHtml("a & <b>")).toBe("a &amp; &lt;b&gt;");
+  });
+
+  it("leaves a string with nothing to escape alone", () => {
+    expect(escapeHtml("Template error on line 3")).toBe("Template error on line 3");
   });
 });

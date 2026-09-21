@@ -39,10 +39,6 @@ public class StorybookScriptBean implements ScriptBean {
     return new StorybookPortalObject(portalUrlServiceSupplier, localeServiceSupplier, portalRequestSupplier, applicationKey, baseDirPath);
   }
 
-  public TemplateErrorCollector newTemplateErrorCollector() {
-    return new TemplateErrorCollector();
-  }
-
   public MultiTemplateLoader getFileAndResourceTemplateLoader(List<String> dirPaths, String appName) {
     List<TemplateLoader> loaders = createFileTemplateLoaders(dirPaths);
 

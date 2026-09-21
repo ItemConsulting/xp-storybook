@@ -1,7 +1,8 @@
 import { type Configuration, getConfiguration, render as renderFreemarker } from "/lib/freemarker";
 import type { TemplateErrors } from "/lib/storybook/errors";
-import { Files, Paths, TemplateClassResolver, TemplateExceptionHandler } from "/lib/storybook/java";
+import { TemplateClassResolver, TemplateExceptionHandler } from "/lib/storybook/java";
 import type { RenderParams } from "/lib/storybook/params";
+import { getBaseDirIfFileExists, getResourcesDirPaths } from "/lib/storybook/resources";
 
 // lib-freemarker's Configuration type omits setNewBuiltinClassResolver (inherited from Configurable).
 type HardenedConfiguration = Configuration & {
@@ -11,15 +12,7 @@ type HardenedConfiguration = Configuration & {
 const storybookService = __.newBean<{
   getPortalObject(baseDirPath: string | undefined): unknown;
   getFileAndResourceTemplateLoader(dirPaths: string[], appName?: string): unknown;
-  newTemplateErrorCollector(): TemplateErrors;
 }>("no.item.storybook.freemarker.StorybookScriptBean");
-
-/**
- * Creates a collector for the errors of all templates rendered while serving one request.
- */
-export function newTemplateErrors(): TemplateErrors {
-  return storybookService.newTemplateErrorCollector();
-}
 
 export function render(params: RenderParams, model: Record<string, unknown>, templateErrors?: TemplateErrors): string {
   const dirPaths = getResourcesDirPaths(params.xpResourcesDirPath);
@@ -39,18 +32,4 @@ export function render(params: RenderParams, model: Record<string, unknown>, tem
   } else {
     return renderFreemarker(params.template, model, params.name);
   }
-}
-
-function getResourcesDirPaths(str: string | undefined): string[] {
-  return str?.split(",").map((str) => str.trim()) ?? [];
-}
-
-function getBaseDirIfFileExists(baseDirPaths: string[], filePath: string): string | undefined {
-  for (const baseDir of baseDirPaths) {
-    if (Files.exists(Paths.get(baseDir, filePath))) {
-      return baseDir;
-    }
-  }
-
-  return undefined;
 }

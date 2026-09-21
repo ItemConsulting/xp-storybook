@@ -1,10 +1,11 @@
 import type { Request, Response } from "@enonic-types/core";
-import { newTemplateErrors, render as renderFreemarker } from "/lib/storybook/freemarker";
+import { newTemplateErrors } from "/lib/storybook/errors";
+import { render as renderFreemarker } from "/lib/storybook/freemarker";
 import { RunMode } from "/lib/storybook/java";
 import { isTemplatePath, parseParams, type RenderFn, type RenderParams } from "/lib/storybook/params";
 import { insertChildComponents } from "/lib/storybook/regions";
 import { render as renderThymeleaf } from "/lib/storybook/thymeleaf";
-import { capitalize, endsWith } from "/lib/storybook/utils";
+import { capitalize, endsWith, escapeHtml } from "/lib/storybook/utils";
 
 const MODE_FREEMARKER = "freemarker";
 const MODE_THYMELEAF = "thymeleaf";
@@ -76,7 +77,8 @@ export function all(req: Request<{ params: QueryParams }>): Response {
     }
 
     if (template || id) {
-      // FreeMarker renders its errors into the output rather than throwing, so they are collected on the side.
+      // A failing template must not take the whole page down: both flavors render the error where the template
+      // would have gone and collect it here, so the response can carry the markup that did render.
       const templateErrors = newTemplateErrors();
       const render: RenderFn = mode === MODE_THYMELEAF ? renderThymeleaf : renderFreemarker;
       const renderFn: RenderFn = (params, viewModel) => render(params, viewModel, templateErrors);
@@ -84,7 +86,8 @@ export function all(req: Request<{ params: QueryParams }>): Response {
         ? {
             type: "inline",
             template,
-            name: "inline-storybook.ftl",
+            // Only used to name the template in error messages, so it follows the flavor being rendered.
+            name: mode === MODE_THYMELEAF ? "inline-storybook.html" : "inline-storybook.ftl",
             xpResourcesDirPath,
             xpAppName,
           }
@@ -129,7 +132,7 @@ export function all(req: Request<{ params: QueryParams }>): Response {
     log.error(`Could not create ${capitalize(mode)} preview`, e);
     return {
       status: 500,
-      body: `<pre style="white-space: pre-wrap;">${(e as { message?: string }).message}</pre>`,
+      body: `<pre style="white-space: pre-wrap;">${escapeHtml((e as { message?: string }).message ?? String(e))}</pre>`,
       headers: HEADERS,
     };
   }

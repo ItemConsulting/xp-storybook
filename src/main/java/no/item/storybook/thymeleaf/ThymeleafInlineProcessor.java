@@ -1,19 +1,13 @@
 package no.item.storybook.thymeleaf;
 
-import com.enonic.xp.resource.ResourceProblemException;
 import com.enonic.xp.script.ScriptValue;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.TemplateSpec;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.exceptions.TemplateProcessingException;
 import org.thymeleaf.templatemode.TemplateMode;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public final class ThymeleafInlineProcessor {
   private final TemplateEngine engine;
@@ -46,20 +40,23 @@ public final class ThymeleafInlineProcessor {
     }
   }
 
-  public String process() throws Throwable {
+  public String process() {
     try {
       final Context context = new Context();
       context.setVariables(this.parameters);
-      final TemplateSpec spec = new TemplateSpec(template, this.mode);
-      return this.engine.process(spec, context);
-    } catch (final RuntimeException e) {
-      Optional<Throwable> templateProcessingException = Streams.findLast(
-        Throwables.getCausalChain(e)
-          .stream()
-          .filter(((throwable) -> throwable instanceof TemplateProcessingException))
+
+      // The template string goes where a template name normally would, so the resolver is told outright that this is
+      // an inline template rather than being left to recognise one.
+      final TemplateSpec spec = new TemplateSpec(
+        this.template,
+        null,
+        this.mode,
+        Map.of(StorybookTemplateResolver.INLINE_ATTRIBUTE, Boolean.TRUE)
       );
 
-      throw templateProcessingException.orElse(e);
+      return this.engine.process(spec, context);
+    } catch (final RuntimeException e) {
+      throw ThymeleafErrors.unwrap(e);
     }
   }
 }

@@ -55,7 +55,7 @@ mapping.api.idProvider.system = default
 |----------------------|------------------------------------------------------------------------------------------|
 | `template`           | Renders this string as an inline template instead of loading one from disk                 |
 | `renderMode`         | `freemarker` or `thymeleaf`. Inferred from the extension (`.ftl`/`.ftlh`/`.ftlx` → FreeMarker, `.html` → Thymeleaf) when omitted |
-| `xpResourcesDirPath` | **Required.** The directory to resolve templates from                                     |
+| `xpResourcesDirPath` | **Required.** The directories to resolve templates from, as a comma separated list        |
 | `xpAppName`          | Application to resolve templates from when they are not on disk                            |
 | `javaTypes`          | JSON mapping model keys to a type (`number`, `localDate`, `zonedDateTime`, `region`, ...)  |
 | `matchers`           | JSON mapping a type to a `/regex/` matched against model keys                              |

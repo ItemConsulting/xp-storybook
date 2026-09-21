@@ -1,24 +1,22 @@
 plugins {
   id "maven-publish"
   id "com.github.node-gradle.node" version "7.1.0"
-  id "com.enonic.xp.app" version "3.6.1"
-}
-
-app {
-  name = "${appName}"
-  displayName = "${appDisplayName}"
-  vendorName = "${vendorName}"
-  vendorUrl = "${vendorUrl}"
-  systemVersion = "${xpVersion}"
+  id "com.enonic.xp.app"
 }
 
 dependencies {
-  implementation "com.enonic.xp:core-api:${xpVersion}"
-  implementation "com.enonic.xp:portal-api:${xpVersion}"
-  include "no.api.freemarker:freemarker-java8:3.0.3"
-  include "no.item:lib-xp-freemarker:3.0.0"
-  include "no.item:lib-xp-time:1.5.0"
-  include "com.enonic.lib:lib-thymeleaf:2.0.1"
+  implementation xplibs.api.core
+  implementation xplibs.api.portal
+  include libs.freemarker.java8
+  include libs.xp.freemarker
+  include libs.xp.time
+  include libs.thymeleaf
+  compileOnly libs.thymeleaf.engine
+
+  testImplementation platform(libs.junit.bom)
+  testImplementation libs.junit.jupiter
+  // Gradle 9 no longer puts the launcher on the test runtime classpath by itself.
+  testRuntimeOnly libs.junit.platform.launcher
 }
 
 repositories {
@@ -30,7 +28,8 @@ repositories {
 
 node {
   download = true
-  version = "24.3.0"
+  // Single source of truth for the Node version, shared with .github/workflows and nvm
+  version = file(".nvmrc").text.trim()
 }
 
 processResources {
@@ -38,14 +37,6 @@ processResources {
   exclude "**/*.json"
 	exclude "**/*.ts"
 	exclude "**/*.tsx"
-}
-
-tasks.register("dev", Exec) {
-  if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-    commandLine "cmd", "/c", "gradlew.bat", "deploy", "-t"
-  } else {
-    commandLine "./gradlew", "deploy", "-t"
-  }
 }
 
 tasks.register("npmBuild", NpmTask) {
@@ -58,7 +49,7 @@ tasks.register("npmBuild", NpmTask) {
   environment = [
     "FORCE_COLOR": "true",
     "LOG_LEVEL_FROM_GRADLE": gradle.startParameter.logLevel.toString(),
-    "NODE_ENV": project.hasProperty("dev") || project.hasProperty("development") ? "development" : "production"
+    "NODE_ENV": project.findProperty("env") == "dev" ? "development" : "production"
   ]
   inputs.dir "src/main/resources"
   outputs.dir "build/resources/main"
@@ -66,6 +57,9 @@ tasks.register("npmBuild", NpmTask) {
 }
 
 jar.dependsOn npmBuild
+
+// npmBuild writes into build/resources/main, which is on the test compile classpath
+compileTestJava.dependsOn npmBuild
 
 tasks.register("npmCheck", NpmTask) {
 	dependsOn npmInstall
@@ -79,6 +73,36 @@ tasks.register("npmCheck", NpmTask) {
 }
 
 check.dependsOn npmCheck
+
+tasks.register("npmTest", NpmTask) {
+	dependsOn npmInstall
+	args = [
+		"run",
+		"test"
+	]
+	environment = [
+		"FORCE_COLOR": "true",
+	]
+  inputs.dir "src/test"
+  inputs.dir "src/main/resources"
+  outputs.upToDateWhen { false }
+}
+
+test.dependsOn npmTest
+
+tasks.test {
+  useJUnitPlatform()
+
+  // Gradle otherwise reports a failure as a bare "AssertionFailedError at Foo.java:9" and points at
+  // an HTML report, which is a dead file:// link on a CI runner. Print the assertion message and
+  // stack trace instead, so a failed workflow run explains itself in the log.
+  testLogging {
+    events "failed"
+    exceptionFormat = "full"
+    showStackTraces = true
+    showCauses = true
+  }
+}
 
 tasks.withType(Copy).configureEach {
   includeEmptyDirs = false

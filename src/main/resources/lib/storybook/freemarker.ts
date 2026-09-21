@@ -1,11 +1,15 @@
-import { render as renderFreemarker, getConfiguration } from "/lib/freemarker";
-import { Paths, Files, TemplateExceptionHandler } from "/lib/storybook/java";
-import type { RenderParams } from "/lib/storybook/params";
+import { type Configuration, getConfiguration, render as renderFreemarker } from "/lib/freemarker";
 import type { TemplateErrors } from "/lib/storybook/errors";
+import { Files, Paths, TemplateClassResolver, TemplateExceptionHandler } from "/lib/storybook/java";
+import type { RenderParams } from "/lib/storybook/params";
+
+// lib-freemarker's Configuration type omits setNewBuiltinClassResolver (inherited from Configurable).
+type HardenedConfiguration = Configuration & {
+  setNewBuiltinClassResolver(resolver: unknown): void;
+};
 
 const storybookService = __.newBean<{
-  createLegacyDirectives(baseDirPath: string): Record<string, unknown>;
-  getPortalObject(baseDirPath: string): unknown;
+  getPortalObject(baseDirPath: string | undefined): unknown;
   getFileAndResourceTemplateLoader(dirPaths: string[], appName?: string): unknown;
   newTemplateErrorCollector(): TemplateErrors;
 }>("no.item.storybook.freemarker.StorybookScriptBean");
@@ -22,12 +26,13 @@ export function render(params: RenderParams, model: Record<string, unknown>, tem
   // If view is a filepath, look up if it exists. `name` indicates inline template.
   const baseDir = params.type === "file" ? getBaseDirIfFileExists(dirPaths, params.filePath) : dirPaths[0];
 
-  const configuration = getConfiguration();
+  const configuration = getConfiguration() as HardenedConfiguration;
+  // Deny FreeMarker's `?new` built-in. The dev-mode gate is the real control; this is defence in
+  // depth that closes the reflective path from a caller-supplied template to arbitrary code.
+  configuration.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
   configuration.setTemplateExceptionHandler(templateErrors ?? TemplateExceptionHandler.HTML_DEBUG_HANDLER);
   configuration.setTemplateLoader(storybookService.getFileAndResourceTemplateLoader(dirPaths, params.xpAppName));
   configuration.setSharedVariable("portal", storybookService.getPortalObject(baseDir));
-
-  addLegacyDirectivesIfNoConflict(model, baseDir);
 
   if (params.type === "file") {
     return renderFreemarker(params.filePath, model);
@@ -48,25 +53,4 @@ function getBaseDirIfFileExists(baseDirPaths: string[], filePath: string): strin
   }
 
   return undefined;
-}
-
-function addLegacyDirectivesIfNoConflict(model: Record<string, unknown>, baseDir: string): void {
-  const directives = storybookService.createLegacyDirectives(baseDir);
-
-  [
-    "component",
-    "pageUrl",
-    "imageUrl",
-    "attachmentUrl",
-    "componentUrl",
-    "serviceUrl",
-    "processHtml",
-    "imagePlaceholder",
-    "assetUrl",
-    "localize",
-  ]
-    .filter((key) => model[key] === undefined)
-    .forEach((key) => {
-      model[key] = directives[key];
-    });
 }

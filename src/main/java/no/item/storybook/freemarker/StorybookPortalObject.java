@@ -1,25 +1,19 @@
 package no.item.storybook.freemarker;
 
+import com.enonic.xp.app.ApplicationKey;
+import com.enonic.xp.i18n.LocaleService;
 import com.enonic.xp.portal.PortalRequest;
 import com.enonic.xp.portal.url.PortalUrlService;
-import com.enonic.xp.portal.view.ViewFunctionService;
 import com.google.common.collect.Lists;
 import freemarker.core.Environment;
 import no.item.freemarker.FreemarkerPortalObjectImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import no.item.storybook.i18n.Phrases;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
 public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
-  private final static Logger log = LoggerFactory.getLogger(StorybookPortalObject.class);
   private final String baseDirPath;
 
   /**
@@ -28,11 +22,12 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
    */
   public StorybookPortalObject(
     Supplier<PortalUrlService> urlServiceSupplier,
-    Supplier<ViewFunctionService> viewFunctionService,
+    Supplier<LocaleService> localeServiceSupplier,
     Supplier<PortalRequest> portalRequestSupplier,
+    ApplicationKey applicationKey,
     String baseDirPath
   ) {
-    super(urlServiceSupplier, viewFunctionService, portalRequestSupplier);
+    super(urlServiceSupplier, localeServiceSupplier, portalRequestSupplier, applicationKey);
     this.baseDirPath = baseDirPath;
   }
 
@@ -84,53 +79,9 @@ public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
    */
   @Override
   public String localize(String key, String locale, List<String> values, List<String> bundles, String application) {
-    if (baseDirPath == null) {
-      log.warn("No base directory set for localization, returning 'NOT_TRANSLATED'");
-      return "NOT_TRANSLATED";
-    }
+    Locale resolved = locale != null ? Locale.forLanguageTag(locale) : Locale.ROOT;
 
-    ResourceBundle bundle = getResourceBundle(locale);
-
-    if (bundle.keySet().contains(key)) {
-      return values.isEmpty() ?  bundle.getString(key) : applyValues(bundle.getString(key), values);
-    } else {
-      return "NOT_TRANSLATED";
-    }
-  }
-
-  private String applyValues(String phrase, List<String> values) {
-    for(int i=0;i<values.size();i++) {
-      phrase = phrase.replaceAll("\\{" + i + "\\}", values.get(i));
-    }
-
-    return phrase;
-  }
-
-  private ResourceBundle getResourceBundle(String languageTag) {
-    Locale locale = languageTag != null ? Locale.forLanguageTag(languageTag) : Locale.ROOT;
-
-    File dir = new File(baseDirPath + File.separator + "i18n");
-    File dir2 = new File(baseDirPath + File.separator + "site" + File.separator + "i18n");
-
-    if (dir.exists()) {
-      try {
-        URL url = dir.toURI().toURL();
-        ClassLoader loader = new URLClassLoader(new URL[]{url});
-        return ResourceBundle.getBundle("phrases", locale, loader); // TODO: Can be another bundle then phrases
-      } catch (MalformedURLException e) {
-        log.error("Could not load resource bundle", e);
-      }
-    } else if (dir2.exists()) {
-      try {
-        URL url = dir2.toURI().toURL();
-        ClassLoader loader = new URLClassLoader(new URL[] {url});
-        return ResourceBundle.getBundle("phrases", locale, loader);
-      } catch (MalformedURLException e) {
-        log.error("Could not load resource bundle", e);
-      }
-    }
-
-    return ResourceBundle.getBundle("phrases", locale);
+    return Phrases.localize(baseDirPath, resolved, key, values);
   }
 }
 

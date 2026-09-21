@@ -1,0 +1,26 @@
+{
+  // Type-checks the node:test suite. Runtime resolution of "/lib/*" is done by loader.mjs; here the
+  // same specifiers are mapped for the compiler. Paths are relative to this directory (src/test).
+  "include": ["*.test.mts", "expect.mts", "stubs/*.mts"],
+
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "strict": true,
+
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+
+    "paths": {
+      "/lib/storybook/*": ["../main/resources/lib/storybook/*"],
+      "/lib/xp/*": ["../../node_modules/@enonic-types/lib-*"],
+      "/lib/*": ["../../node_modules/@item-enonic-types/lib-*"],
+      "/*": ["../main/resources/*"]
+    },
+
+    "skipLibCheck": true,
+    "types": ["node", "@enonic-types/global", "@item-enonic-types/nashorn-env"]
+  }
+}

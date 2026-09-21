@@ -1,7 +1,7 @@
 package no.item.storybook.thymeleaf;
 
 import com.enonic.xp.portal.PortalRequestAccessor;
-import com.enonic.xp.portal.view.ViewFunctionService;
+import com.enonic.lib.thymeleaf.view.ViewFunctionService;
 import com.enonic.xp.script.bean.BeanContext;
 import com.enonic.xp.script.bean.ScriptBean;
 import com.google.common.collect.Sets;

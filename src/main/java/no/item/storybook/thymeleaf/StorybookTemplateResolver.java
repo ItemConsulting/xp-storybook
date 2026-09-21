@@ -1,6 +1,5 @@
 package no.item.storybook.thymeleaf;
 
-import org.apache.commons.lang.StringUtils;
 import org.thymeleaf.IEngineConfiguration;
 import org.thymeleaf.cache.ICacheEntryValidity;
 import org.thymeleaf.cache.NonCacheableCacheEntryValidity;
@@ -34,7 +33,7 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
       return new StringTemplateResource(template);  // TODO Set basePath to be used to find referenced
     } else if (ownerTemplate != null && template.startsWith(".")) { // Resolves relative filepath
       try {
-        String path = Paths.get(this.getPrefix(), StringUtils.substringBeforeLast(ownerTemplate, "/"), template).toFile().getCanonicalPath();
+        String path = Paths.get(this.getPrefix(), substringBeforeLast(ownerTemplate, "/"), template).toFile().getCanonicalPath();
         return new FileTemplateResource(path, characterEncoding);
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -47,6 +46,11 @@ public class StorybookTemplateResolver extends AbstractConfigurableTemplateResol
   @Override
   protected ICacheEntryValidity computeValidity(final IEngineConfiguration configuration, final String ownerTemplate, final String template, final Map<String, Object> templateResolutionAttributes) {
     return NonCacheableCacheEntryValidity.INSTANCE;
+  }
+
+  private static String substringBeforeLast(final String str, final String separator) {
+    final int pos = str.lastIndexOf(separator);
+    return pos == -1 ? str : str.substring(0, pos);
   }
 
   private boolean isHtmlContent(String template) {

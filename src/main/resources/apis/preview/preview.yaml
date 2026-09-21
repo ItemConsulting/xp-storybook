@@ -1,0 +1,14 @@
+kind: "API"
+title: "Storybook preview"
+description: "Renders FreeMarker and Thymeleaf templates for the Storybook server renderer"
+documentationUrl: "https://github.com/ItemConsulting/xp-storybook"
+
+# Exposed on the Web endpoint, so the Storybook server can reach it at
+# /api/no.item.storybook:preview without going through a site or webapp.
+mount: ["web"]
+
+# The Storybook server calls this from a browser without XP credentials, so the API itself cannot
+# be the gate. The implementation refuses every request unless XP runs in development mode
+# (com.enonic.xp.server.RunMode), which a production installation never does.
+allow:
+  - "role:system.everyone"

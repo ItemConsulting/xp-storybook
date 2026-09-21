@@ -1,0 +1,3 @@
+{
+  "reject": ["@enonic-types/*", "@types/node"]
+}

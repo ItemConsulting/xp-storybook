@@ -10,28 +10,57 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
 > [!CAUTION]  
-> This application should **never** be deployed in production! An attacker can use this application to render any content on your domain.
+> This application should **never** be deployed in production! An attacker can use this application to render any 
+> content on your domain. 
+>
+> The app will only render templates when Enonic XP runs in **development mode**.
 
-## Configuration
+## Versions
 
-You need to create a configuration file: **XP_HOME/config/no.item.storybook.cfg** with the following content:
+| Enonic XP | This library |
+| --------- | ------------ |
+| 8.x       | 2.x          |
+| 7.x       | 1.x          |
 
-```ini
-iAmNotFoolishEnoughToDeployThisInProduction=true
+### The rendering endpoint
+
+The app exposes a [Universal API](https://developer.enonic.com/docs/code/stable/web/apis) named `preview`, mounted on 
+the Web endpoint:
+
+```
+http://localhost:8080/api/no.item.storybook:preview/<path/to/template>
 ```
 
-The **rendering endpoint** will be exposed at http://localhost:8080/webapp/no.item.storybook. 
-If you have enabled local vhost routing through _com.enonic.xp.web.vhost.cfg_, you need to create a mapping that exposes
-the _webapp_ endpoints:
+The path is resolved relative to `xpResourcesDirPath`, and only `.ftl`, `.ftlh`, `.ftlx` and
+`.html` files can be rendered — anything else is rejected with a `400`. Since the caller supplies
+`xpResourcesDirPath`, this is what keeps the endpoint from being used to read arbitrary files.
+
+## Config
+
+If you have enabled local vhost routing through _com.enonic.xp.web.vhost.cfg_, you need a mapping
+that exposes the _api_ endpoint:
 
 ```ini
 enabled = true
 
-mapping.webapp.host = localhost
-mapping.webapp.source = /webapp
-mapping.webapp.target = /webapp
-mapping.webapp.idProvider.system = default
+mapping.api.host = localhost
+mapping.api.source = /api
+mapping.api.target = /api
+mapping.api.idProvider.system = default
 ```
+
+### Reserved query parameters
+
+| Parameter            | Purpose                                                                                  |
+|----------------------|------------------------------------------------------------------------------------------|
+| `template`           | Renders this string as an inline template instead of loading one from disk                 |
+| `renderMode`         | `freemarker` or `thymeleaf`. Inferred from the extension (`.ftl`/`.ftlh`/`.ftlx` → FreeMarker, `.html` → Thymeleaf) when omitted |
+| `xpResourcesDirPath` | **Required.** The directory to resolve templates from                                     |
+| `xpAppName`          | Application to resolve templates from when they are not on disk                            |
+| `javaTypes`          | JSON mapping model keys to a type (`number`, `localDate`, `zonedDateTime`, `region`, ...)  |
+| `matchers`           | JSON mapping a type to a `/regex/` matched against model keys                              |
+
+Any other query parameter is passed to the template as a model value.
 
 ## Getting started
 
@@ -60,5 +89,5 @@ enonic project deploy
 ### Deploy to Maven
 
 ```bash
-./gradlew publish -P com.enonic.xp.app.production=true
+./gradlew publish
 ```

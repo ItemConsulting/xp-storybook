@@ -1,17 +1,14 @@
 package no.item.storybook.thymeleaf;
 
 import com.enonic.xp.portal.PortalRequest;
-import com.enonic.xp.portal.view.ViewFunctionParams;
-import com.enonic.xp.portal.view.ViewFunctionService;
+import com.enonic.lib.thymeleaf.view.ViewFunctionParams;
+import com.enonic.lib.thymeleaf.view.ViewFunctionService;
+import no.item.storybook.i18n.Phrases;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.ResourceBundle;
 
 final class ThymeleafViewFunctions {
   ViewFunctionService viewFunctionService;
@@ -66,40 +63,24 @@ final class ThymeleafViewFunctions {
     return execute("processHtml", params).toString();
   }
 
-  public String localize(final List<String> params) throws MalformedURLException {
-    ResourceBundle bundle = getResourceBundle(getLocaleFromParams(params));
+  public String localize(final List<String> params) {
     return getParamValue(params, "_key")
-      .map(bundle::getString)
-      .map(str -> this.applyValues(str, params))
-      .orElse("NOT_TRANSLATED");
+      .map(key -> Phrases.localize(baseDirPath, getLocaleFromParams(params), key, valuesFrom(params)))
+      .orElse(Phrases.NOT_TRANSLATED);
   }
 
-  private String applyValues(final String str, final List<String> params) {
-    var values = getParamValue(params, "_values")
-      .map(valuesStr -> valuesStr.split(","))
-      .orElse(new String[0]);
-
-    String result = str;
-
-    for (int i = 0; i < values.length; i++) {
-      result = result.replace("{" + i + "}", values[i]);
-    }
-
-    return result;
+  private List<String> valuesFrom(final List<String> params) {
+    return getParamValue(params, "_values")
+      .map(valuesStr -> Arrays.asList(valuesStr.split(",")))
+      .orElse(List.of());
   }
+
 
   private Object execute(final String name, final List<String> args) {
     final ViewFunctionParams params = new ViewFunctionParams().name(name).args(args).portalRequest(this.portalRequest);
     return this.viewFunctionService.execute(params);
   }
 
-  private ResourceBundle getResourceBundle(final Locale locale) throws MalformedURLException {
-    File file = new File(baseDirPath + File.separator + "i18n");
-    URL[] urls = {file.toURI().toURL()};
-    ClassLoader loader = new URLClassLoader(urls);
-
-    return ResourceBundle.getBundle("phrases", locale, loader);
-  }
 
   private Locale getLocaleFromParams(final List<String> params) {
     return getParamValue(params, "_locale").map(Locale::forLanguageTag).orElse(Locale.ROOT);

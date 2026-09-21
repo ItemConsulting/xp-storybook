@@ -28,7 +28,7 @@ export function render(params: RenderParams, model: Record<string, unknown>): st
 export function renderFile(id: string, model: Record<string, unknown>, xpResourcesDirPath: string): string {
   const processor = service.newFileProcessor(xpResourcesDirPath);
 
-  processor.filePath = "/" + id;
+  processor.filePath = `/${id}`;
   processor.model = __.toScriptValue(model);
 
   return processor.process();

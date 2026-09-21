@@ -1,24 +1,27 @@
-import { LocalDate, LocalDateTime, ZonedDateTime } from "/lib/time";
 import { pick, traverse } from "/lib/storybook/utils";
+import { LocalDate, LocalDateTime, ZonedDateTime } from "/lib/time";
 
 const UN_JSONIFIED_OBJECT_STRING = "[object Object]";
 
 export type MatcherMap = Record<string, RegExp>;
 
+/** javaTypes mirror the shape of the model, so a nested key is addressed by its path. */
+export type JavaTypeMap = { [key: string]: string | JavaTypeMap };
+
 export function deserializeJsonEntries(
   params: Record<string, string | undefined>,
   parsedMatchers: MatcherMap,
-  parsedJavaTypes: Record<string, string>,
+  parsedJavaTypes: JavaTypeMap,
 ): Record<string, unknown> {
   return traverse(params, (key, value, path) => {
     const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
-    if (javaType && typeof value === "string") {
+    if (typeof javaType === "string" && typeof value === "string") {
       return deserializeJavaObjects(value, javaType);
     } else if (typeof value === "string" && isJsonString(value)) {
       try {
         return JSON.parse(value);
       } catch {
-        log.warning(`Could not parse "${key}" as JSON: ` + value);
+        log.warning(`Could not parse "${key}" as JSON: ${value}`);
       }
     }
     return value;
@@ -66,9 +69,11 @@ export function deserializeJavaObjects(value: string, type: string): unknown {
     case "localDateTime":
       return LocalDateTime.parse(value);
     case "number":
-      return parseInt(value);
+      return parseInt(value, 10);
     case "region":
       return JSON.parse(value);
+    // `type` is a plain string, so this case is the only place documenting "string" as supported.
+    // biome-ignore lint/complexity/noUselessSwitchCase: documents a supported value
     case "string":
     default:
       return value;
@@ -80,11 +85,11 @@ export function isJsonString(str: string): boolean {
 }
 
 function isArrayString(str: string): boolean {
-  return str !== UN_JSONIFIED_OBJECT_STRING && str[0] == "[" && str[1] !== "#" && str[str.length - 1] === "]";
+  return str !== UN_JSONIFIED_OBJECT_STRING && str[0] === "[" && str[1] !== "#" && str[str.length - 1] === "]";
 }
 
 function isObjectString(str: unknown): boolean {
-  return typeof str === "string" && str[0] == "{" && str[str.length - 1] === "}";
+  return typeof str === "string" && str[0] === "{" && str[str.length - 1] === "}";
 }
 
 function isBooleanString(str: string): boolean {

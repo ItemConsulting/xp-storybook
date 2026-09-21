@@ -1,13 +1,11 @@
-export function pick(value: unknown, path: string[]): undefined | string {
-  const res = path.reduce((res: unknown, key: string) => {
+export function pick(value: unknown, path: string[]): unknown {
+  return path.reduce((res: unknown, key: string) => {
     if (isRecord(res)) {
       return res[key];
     } else {
       return undefined;
     }
   }, value);
-
-  return res as string | undefined;
 }
 
 export function substringAfter(str: string, delimiter: string): string {
@@ -22,7 +20,9 @@ export function traverse(
   const res: Record<string, unknown> = {};
 
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    // The suggested Object.hasOwn is ES2022, and Nashorn (XP's server-side engine) does not have it.
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is not available on Nashorn
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = f(key, obj[key], path.concat(key));
       res[key] = isRecord(value)
         ? traverse(value, f, path.concat(key))
@@ -76,7 +76,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isObject(obj: unknown): boolean {
-  return obj.constructor?.toString().match(/\w+/g)[1] === "Object";
+  const ctor = (obj as { constructor?: { toString(): string } } | null)?.constructor;
+  return ctor?.toString().match(/\w+/g)?.[1] === "Object";
 }
 
 export function endsWith(str: string, suffix: string): boolean {

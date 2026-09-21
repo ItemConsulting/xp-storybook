@@ -1,0 +1,22 @@
+# Libraries that are not part of Enonic XP itself.
+# XP's own libraries and APIs come from the `xplibs` catalog, which the
+# com.enonic.xp.settings plugin generates from `xpVersion` in gradle.properties.
+[versions]
+freemarker-java8 = "3.0.3"
+xp-freemarker = "4.0.0"
+xp-time = "1.6.1"
+thymeleaf = "3.0.0"
+# lib-thymeleaf declares Thymeleaf itself as a runtime dependency, so it never reaches the compile
+# classpath. Keep this in step with the engine version the lib-thymeleaf release above bundles.
+thymeleaf-engine = "3.1.5.RELEASE"
+junit = "6.0.1"
+
+[libraries]
+freemarker-java8 = { module = "no.api.freemarker:freemarker-java8", version.ref = "freemarker-java8" }
+xp-freemarker = { module = "no.item:lib-xp-freemarker", version.ref = "xp-freemarker" }
+xp-time = { module = "no.item:lib-xp-time", version.ref = "xp-time" }
+thymeleaf = { module = "com.enonic.lib:lib-thymeleaf", version.ref = "thymeleaf" }
+thymeleaf-engine = { module = "org.thymeleaf:thymeleaf", version.ref = "thymeleaf-engine" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

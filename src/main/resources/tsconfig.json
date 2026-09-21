@@ -8,9 +8,7 @@
   // Specifies an array of filenames or patterns to include in the program.
   // These filenames are resolved relative to the directory containing the
   // tsconfig.json file.
-  "include": [
-    "**/*.ts"
-  ],
+  "include": ["**/*.ts"],
 
   // Specifies an array of filenames or patterns that should be skipped when
   // resolving include.
@@ -20,17 +18,25 @@
   // a /// <reference directive, or being specified in the files list.
   // It is not a mechanism that prevents a file from being included in the
   // codebase - it simply changes what the include setting finds.
-  "exclude": [
-    "**/*.d.ts",
-  ],
+  "exclude": ["**/*.d.ts"],
 
   "compilerOptions": {
+    // XP's server-side engine is Nashorn, which is ES5.1. The bundler lowers ES2015+ *syntax*,
+    // but nothing polyfills ES2015+ *built-ins* — so "lib": ["ES5"] is what stops
+    // Object.hasOwn / Array.includes / Object.entries and friends reaching the server, where they
+    // fail at runtime with "... is not a function".
+    "target": "ES2015",
+    "lib": ["ES5"],
+
+    // Enable all strict type-checking options.
+    "strict": true,
+
     // A series of entries which re-map imports to lookup locations relative
     // to the baseUrl if set, or to the tsconfig file itself otherwise.
     "paths": {
       "/lib/xp/*": ["../../../node_modules/@enonic-types/lib-*"],
-      "/lib/*": [ "../../../node_modules/@item-enonic-types/lib-*" ,"./lib/*"],
-      "/*": ["./*"],
+      "/lib/*": ["../../../node_modules/@item-enonic-types/lib-*", "./lib/*"],
+      "/*": ["./*"]
     },
 
     "skipLibCheck": true,
@@ -51,6 +57,6 @@
       // __.newBean, __.toNativeObject, __.nullOrValue
       "@enonic-types/global",
       "@item-enonic-types/nashorn-env"
-    ],
-  },
+    ]
+  }
 }

@@ -1,0 +1,5 @@
+kind: "Application"
+title: "Storybook"
+description: "Use Storybook to preview your Freemarker or Thymeleaf templates and css"
+vendorName: "Item Consulting"
+vendorUrl: "https://item.no"

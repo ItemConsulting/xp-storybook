@@ -55,6 +55,6 @@ public class ResourceTemplateLoader implements TemplateLoader {
     ApplicationKey applicationKey = ApplicationKey.from(appName);
     ResourceKeys keys = service.findFiles(applicationKey, name);
 
-    return Optional.ofNullable(keys.get(0)).map(service::getResource);
+    return Optional.ofNullable(keys.first()).map(service::getResource);
   }
 }

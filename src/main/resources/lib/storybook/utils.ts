@@ -92,3 +92,16 @@ function isJavaClass(value: unknown): boolean {
 
   return cls !== undefined && String(cls).substring(0, 6) === "class ";
 }
+
+/**
+ * Escapes `str` for interpolation into HTML. Error messages are the reason this exists: a template engine quotes the
+ * offending source in them, so they routinely carry markup of their own.
+ */
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

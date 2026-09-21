@@ -1,4 +1,4 @@
-package no.item.storybook.freemarker;
+package no.item.storybook.render;
 
 import freemarker.core.Environment;
 import freemarker.template.TemplateException;
@@ -10,16 +10,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A {@link TemplateExceptionHandler} that writes errors into the output the same way
- * {@link TemplateExceptionHandler#HTML_DEBUG_HANDLER} does, while also keeping a record of them so the controller
- * can respond with a 500 status.
+ * The errors of every template rendered while serving one request, so the controller can respond with a 500 status
+ * while still returning the markup that did render.
  *
- * <p>{@code HTML_DEBUG_HANDLER} rethrows once it has written the error to the output, and lib-xp-freemarker swallows
- * that exception for that particular handler. The controller is therefore never told that rendering failed. Catching
- * the rethrow here keeps the rest of the template rendering, and {@link #hasErrors()} reports the failure instead.
+ * <p>Thymeleaf throws on a failing template, so the Thymeleaf renderer records the message with {@link #add(String)}.
+ * FreeMarker instead writes its errors into the output, which is why this doubles as a
+ * {@link TemplateExceptionHandler}: {@code HTML_DEBUG_HANDLER} rethrows once it has written the error to the output,
+ * and lib-xp-freemarker swallows that exception for that particular handler, so the controller is never told that
+ * rendering failed. Catching the rethrow here keeps the rest of the template rendering, and {@link #hasErrors()}
+ * reports the failure instead.
  */
-public class TemplateErrorCollector implements TemplateExceptionHandler {
+public class TemplateErrors implements TemplateExceptionHandler {
   private final List<String> messages = Collections.synchronizedList(new ArrayList<>());
+
+  /**
+   * Record an error raised by a template engine that reports failures by throwing.
+   *
+   * @param message the error message to report alongside the rendered output.
+   */
+  public void add(final String message) {
+    this.messages.add(message);
+  }
 
   @Override
   public void handleTemplateException(TemplateException te, Environment env, Writer out) throws TemplateException {
@@ -29,7 +40,7 @@ public class TemplateErrorCollector implements TemplateExceptionHandler {
     }
 
     // Read the message before delegating, as printing the stack trace replaces it with a "see it above" placeholder.
-    this.messages.add(te.getMessage());
+    add(te.getMessage());
 
     try {
       TemplateExceptionHandler.HTML_DEBUG_HANDLER.handleTemplateException(te, env, out);

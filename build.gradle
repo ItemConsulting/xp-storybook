@@ -15,6 +15,8 @@ dependencies {
 
   testImplementation platform(libs.junit.bom)
   testImplementation libs.junit.jupiter
+  // Only compileOnly above, since lib-thymeleaf brings the engine at runtime. The resolver test needs it for real.
+  testImplementation libs.thymeleaf.engine
   // Gradle 9 no longer puts the launcher on the test runtime classpath by itself.
   testRuntimeOnly libs.junit.platform.launcher
 }

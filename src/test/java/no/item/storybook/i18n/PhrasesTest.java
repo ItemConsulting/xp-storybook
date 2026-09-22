@@ -1,106 +1,120 @@
 package no.item.storybook.i18n;
 
+import com.enonic.xp.app.ApplicationKey;
+import no.item.storybook.FakeResourceService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PhrasesTest {
-  @TempDir
-  Path baseDir;
+  private static final ApplicationKey APP = ApplicationKey.from("com.example.app");
 
-  private void writePhrases(final Path dir, final String content) throws IOException {
-    Files.createDirectories(dir);
-    Files.writeString(dir.resolve("phrases.properties"), content);
+  private FakeResourceService resources;
+
+  @BeforeEach
+  void setUp() {
+    this.resources = new FakeResourceService();
+  }
+
+  private String localize(final Locale locale, final String key, final List<String> values) {
+    return Phrases.localize(this.resources, APP, locale, key, values, List.of());
   }
 
   @Test
-  void returns_not_translated_when_there_is_no_i18n_directory() {
-    assertEquals(Phrases.NOT_TRANSLATED,
-      Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of()));
+  void resolves_a_key_from_the_default_bundle() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hei");
+
+    assertEquals("Hei", localize(Locale.ROOT, "greeting", List.of()));
+  }
+
+  @Test
+  void answers_not_translated_when_the_application_has_no_bundle() {
+    assertEquals(Phrases.NOT_TRANSLATED, localize(Locale.ROOT, "greeting", List.of()));
+  }
+
+  @Test
+  void answers_not_translated_for_a_key_the_bundle_does_not_have() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hei");
+
+    assertEquals(Phrases.NOT_TRANSLATED, localize(Locale.ROOT, "absent", List.of()));
+  }
+
+  @Test
+  void answers_not_translated_for_a_missing_key() {
+    assertEquals(Phrases.NOT_TRANSLATED, localize(Locale.ROOT, null, List.of()));
+  }
+
+  @Test
+  void substitutes_positional_values() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hei {0} og {1}!");
+
+    assertEquals("Hei Tom og Ada!", localize(Locale.ROOT, "greeting", List.of("Tom", "Ada")));
+  }
+
+  /** XP leaves the phrase untouched when there is nothing to substitute, so a placeholder survives verbatim. */
+  @Test
+  void leaves_placeholders_alone_when_no_values_are_given() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hei {0}");
+
+    assertEquals("Hei {0}", localize(Locale.ROOT, "greeting", List.of()));
+  }
+
+  @Test
+  void picks_the_bundle_matching_the_locale() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hello");
+    this.resources.put(APP, "/i18n/phrases_no.properties", "greeting=Hei");
+
+    assertEquals("Hei", localize(Locale.forLanguageTag("no"), "greeting", List.of()));
+  }
+
+  /** A key the specific bundle does not have falls back to the less specific one, as ResourceBundle would. */
+  @Test
+  void falls_back_to_the_less_specific_bundle_for_a_key_the_specific_one_lacks() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hello\nfarewell=Bye");
+    this.resources.put(APP, "/i18n/phrases_no.properties", "greeting=Hei");
+
+    assertEquals("Bye", localize(Locale.forLanguageTag("no"), "farewell", List.of()));
+  }
+
+  @Test
+  void prefers_the_country_specific_bundle() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Hello");
+    this.resources.put(APP, "/i18n/phrases_no.properties", "greeting=Hei");
+    this.resources.put(APP, "/i18n/phrases_no_NO.properties", "greeting=Hei fra Norge");
+
+    assertEquals("Hei fra Norge", localize(Locale.forLanguageTag("no-NO"), "greeting", List.of()));
+  }
+
+  @Test
+  void reads_an_explicitly_named_bundle() {
+    this.resources.put(APP, "/i18n/other.properties", "greeting=Fra en annen bundle");
+
+    assertEquals("Fra en annen bundle",
+      Phrases.localize(this.resources, APP, Locale.ROOT, "greeting", List.of(), List.of("/i18n/other")));
+  }
+
+  @Test
+  void accepts_a_bundle_name_without_a_leading_slash() {
+    this.resources.put(APP, "/i18n/other.properties", "greeting=Fra en annen bundle");
+
+    assertEquals("Fra en annen bundle",
+      Phrases.localize(this.resources, APP, Locale.ROOT, "greeting", List.of(), List.of("i18n/other")));
   }
 
   /**
-   * The reported case: an i18n directory that exists but holds no phrases.properties — which is
-   * what a scaffolded project with only a .gitkeep looks like. This used to escape as
-   * MissingResourceException and replace the rendered component with a stack trace.
+   * The reason this does not go through XP's LocaleService: a preview has to show what the file says now, and
+   * LocaleService caches a bundle per application and locale.
    */
   @Test
-  void returns_not_translated_when_the_i18n_directory_has_no_bundle() throws IOException {
-    Files.createDirectories(baseDir.resolve("i18n"));
+  void reads_the_bundle_again_on_every_call() {
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=Before");
+    assertEquals("Before", localize(Locale.ROOT, "greeting", List.of()));
 
-    assertEquals(Phrases.NOT_TRANSLATED,
-      Phrases.localize(baseDir.toString(), Locale.forLanguageTag("en-US"), "greeting", List.of()));
-  }
-
-  @Test
-  void returns_not_translated_for_a_null_base_directory() {
-    assertEquals(Phrases.NOT_TRANSLATED, Phrases.localize(null, Locale.ROOT, "greeting", List.of()));
-  }
-
-  @Test
-  void resolves_a_key_from_the_i18n_directory() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Hei");
-
-    assertEquals("Hei", Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of()));
-  }
-
-  @Test
-  void returns_not_translated_for_a_key_the_bundle_does_not_have() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Hei");
-
-    assertEquals(Phrases.NOT_TRANSLATED,
-      Phrases.localize(baseDir.toString(), Locale.ROOT, "absent", List.of()));
-  }
-
-  @Test
-  void substitutes_positional_values() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Hei {0} og {1}!");
-
-    assertEquals("Hei Tom og Ada!",
-      Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of("Tom", "Ada")));
-  }
-
-  @Test
-  void leaves_placeholders_alone_when_no_values_are_given() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Hei {0}");
-
-    assertEquals("Hei {0}", Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of()));
-  }
-
-  @Test
-  void falls_back_to_the_site_i18n_directory() throws IOException {
-    writePhrases(baseDir.resolve("site").resolve("i18n"), "greeting=Fra site-mappa");
-
-    assertEquals("Fra site-mappa", Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of()));
-  }
-
-  @Test
-  void prefers_the_top_level_i18n_directory_over_the_site_one() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Toppnivaa");
-    writePhrases(baseDir.resolve("site").resolve("i18n"), "greeting=Fra site-mappa");
-
-    assertEquals("Toppnivaa", Phrases.localize(baseDir.toString(), Locale.ROOT, "greeting", List.of()));
-  }
-
-  @Test
-  void picks_the_bundle_matching_the_locale() throws IOException {
-    writePhrases(baseDir.resolve("i18n"), "greeting=Hello");
-    Files.writeString(baseDir.resolve("i18n").resolve("phrases_no.properties"), "greeting=Hei");
-
-    assertEquals("Hei",
-      Phrases.localize(baseDir.toString(), Locale.forLanguageTag("no"), "greeting", List.of()));
-  }
-
-  @Test
-  void find_returns_empty_when_there_is_no_bundle() {
-    assertTrue(Phrases.find(baseDir.toString(), Locale.ROOT).isEmpty());
+    this.resources.put(APP, "/i18n/phrases.properties", "greeting=After");
+    assertEquals("After", localize(Locale.ROOT, "greeting", List.of()));
   }
 }

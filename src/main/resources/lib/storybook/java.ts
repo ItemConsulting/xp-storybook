@@ -2,25 +2,6 @@ export const TemplateExceptionHandler = Java.type<{
   HTML_DEBUG_HANDLER: unknown;
 }>("freemarker.template.TemplateExceptionHandler");
 
-export type Path = {
-  compareTo(other: Path): number;
-  endsWith(other: string): boolean;
-  endsWith(other: Path): boolean;
-  resolve(other: string): boolean;
-  resolve(other: Path): boolean;
-  startsWith(other: string): boolean;
-  startsWith(other: Path): boolean;
-  normalize(): Path;
-};
-
-export const Paths = Java.type<{
-  get(path: string, ...more: string[]): Path;
-}>("java.nio.file.Paths");
-
-export const Files = Java.type<{
-  exists(path: Path): boolean;
-}>("java.nio.file.Files");
-
 /**
  * XP's own run mode. `enonic sandbox start` runs in dev mode by default (`--prod` opts out), while
  * a production installation runs in PROD — which is what lets this app refuse to render there.

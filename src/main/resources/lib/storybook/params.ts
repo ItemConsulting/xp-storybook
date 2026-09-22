@@ -10,15 +10,14 @@ import {
 import { endsWith, filterObject, split } from "/lib/storybook/utils";
 
 /**
- * Extensions this app is willing to read off disk.
+ * Extensions this app recognises as a template.
  *
- * The caller chooses `xpResourcesDirPath`, so without this restriction the endpoint would render —
- * and therefore disclose — any file the XP process can read. A template engine emits a file with no
- * directives verbatim, which makes an unrestricted read equivalent to an arbitrary file read.
+ * Used to pick the flavor from the path, to tell a `views` value that is a template path from one that is inline
+ * JSON, and to answer a request for something that is not a template with a clear 400 rather than a render error.
  */
 const TEMPLATE_EXTENSIONS = [".ftl", ".ftlh", ".ftlx", ".html"];
 
-/** Whether `path` names a template this app may load from disk. */
+/** Whether `path` names a template this app can render. */
 export function isTemplatePath(path: string): boolean {
   const lowerCased = path.toLowerCase();
 
@@ -28,16 +27,14 @@ export function isTemplatePath(path: string): boolean {
 export type FileRenderParams = {
   type: "file";
   filePath: string;
-  xpResourcesDirPath: string;
-  xpAppName?: string;
+  xpAppName: string;
 };
 
 export type InlineRenderParams = {
   type: "inline";
   template: string;
   name: string;
-  xpResourcesDirPath: string;
-  xpAppName?: string;
+  xpAppName: string;
 };
 
 export type RenderParams = FileRenderParams | InlineRenderParams;
@@ -55,15 +52,18 @@ export type ParsedParams = {
   views: ViewMap;
   model: Record<string, unknown>;
   components: Component[];
-  xpResourcesDirPath: string;
-  xpAppName?: string;
+  xpAppName: string;
 };
 
 export function parseParams(params: Record<string, string>): ParsedParams {
   const { template, javaTypes, matchers } = params;
   // Deliberately not object rest (`...extra`): the bundler lowers it with a helper that calls
   // Array.prototype.includes, which Nashorn does not have. See tsdown.config.mts.
-  const extra = filterObject(params, (_value, key) => key !== "template" && key !== "javaTypes" && key !== "matchers");
+  // The reserved parameters configure the renderer, so none of them belongs in the model.
+  const extra = filterObject(
+    params,
+    (_value, key) => key !== "template" && key !== "javaTypes" && key !== "matchers" && key !== "xpAppName",
+  );
   const [views, rawModel] = split(extra, (_value, key) => isComponentDescriptor(key));
   const parsedMatchers = parseMatchers(JSON.parse(matchers ?? "{}"));
   const parsedJavaTypes = JSON.parse(javaTypes ?? "{}");
@@ -71,21 +71,20 @@ export function parseParams(params: Record<string, string>): ParsedParams {
 
   return {
     template,
-    views: parseViews(views, params.xpResourcesDirPath, params.xpAppName),
+    views: parseViews(views, params.xpAppName),
     model,
     components: parsedMatchers.region ? getRegionComponents(findRegions(model, parsedMatchers.region)) : [],
-    xpResourcesDirPath: params.xpResourcesDirPath,
     xpAppName: params.xpAppName,
   };
 }
 
-function parseViews(rec: Record<string, string>, xpResourcesDirPath: string, xpAppName?: string): ViewMap {
+function parseViews(rec: Record<string, string>, xpAppName: string): ViewMap {
   return Object.keys(rec).reduce<ViewMap>((res, key) => {
     if (!isComponentDescriptor(key)) {
       return res;
     }
 
-    const inline = extractInlineTemplate(rec[key], key, xpResourcesDirPath, xpAppName);
+    const inline = extractInlineTemplate(rec[key], key, xpAppName);
 
     if (inline) {
       res[key] = inline;
@@ -93,7 +92,6 @@ function parseViews(rec: Record<string, string>, xpResourcesDirPath: string, xpA
       res[key] = {
         type: "file",
         filePath: rec[key],
-        xpResourcesDirPath,
         xpAppName,
       };
     } else {
@@ -104,19 +102,12 @@ function parseViews(rec: Record<string, string>, xpResourcesDirPath: string, xpA
   }, {});
 }
 
-function extractInlineTemplate(
-  str: string,
-  key: string,
-  xpResourcesDirPath: string,
-  xpAppName?: string,
-): InlineRenderParams | undefined {
+function extractInlineTemplate(str: string, key: string, xpAppName: string): InlineRenderParams | undefined {
   if (!isJsonString(str)) {
     return undefined;
   }
 
   const parsed = JSON.parse(str) as { template?: string };
 
-  return parsed.template
-    ? { type: "inline", template: parsed.template, name: key, xpResourcesDirPath, xpAppName }
-    : undefined;
+  return parsed.template ? { type: "inline", template: parsed.template, name: key, xpAppName } : undefined;
 }

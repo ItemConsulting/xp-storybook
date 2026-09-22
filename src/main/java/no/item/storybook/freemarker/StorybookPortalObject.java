@@ -4,7 +4,7 @@ import com.enonic.xp.app.ApplicationKey;
 import com.enonic.xp.i18n.LocaleService;
 import com.enonic.xp.portal.PortalRequest;
 import com.enonic.xp.portal.url.PortalUrlService;
-import com.google.common.collect.Lists;
+import com.enonic.xp.resource.ResourceService;
 import freemarker.core.Environment;
 import no.item.freemarker.FreemarkerPortalObjectImpl;
 import no.item.storybook.i18n.Phrases;
@@ -13,75 +13,62 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
 
+/**
+ * The {@code portal} object, with {@code localize} reading the phrases of the application being previewed on every
+ * call rather than through XP's {@code LocaleService}.
+ *
+ * <p>{@code LocaleService} caches a message bundle per application and locale, so an edited
+ * {@code phrases.properties} would not appear until the application was deployed again. See {@link Phrases}.
+ */
 public class StorybookPortalObject extends FreemarkerPortalObjectImpl {
-  private final String baseDirPath;
+  private final Supplier<ResourceService> resourceServiceSupplier;
+  private final ApplicationKey applicationKey;
 
-  /**
-   * This object provides portal-related functionality for Freemarker templates,
-   * including URL generation, localization, and HTML processing capabilities.
-   */
   public StorybookPortalObject(
     Supplier<PortalUrlService> urlServiceSupplier,
     Supplier<LocaleService> localeServiceSupplier,
     Supplier<PortalRequest> portalRequestSupplier,
-    ApplicationKey applicationKey,
-    String baseDirPath
+    Supplier<ResourceService> resourceServiceSupplier,
+    ApplicationKey applicationKey
   ) {
     super(urlServiceSupplier, localeServiceSupplier, portalRequestSupplier, applicationKey);
-    this.baseDirPath = baseDirPath;
+    this.resourceServiceSupplier = resourceServiceSupplier;
+    this.applicationKey = applicationKey;
   }
 
-  /**
-   * This function localizes a phrase.
-   *
-   * @param key The property key.
-   * @return The localized string.
-   */
   @Override
   public String localize(String key) {
-    return localize(key, Lists.newArrayList());
+    return localize(key, List.of());
   }
 
-  /**
-   * This function localizes a phrase.
-   *
-   * @param key    The property key.
-   * @param values Placeholder values.
-   * @return The localized string.
-   */
   @Override
   public String localize(String key, List<String> values) {
+    // The locale FreeMarker is rendering with. Outside a portal request that is the configuration default, which is
+    // the same one lib-xp-freemarker would hand to LocaleService.
     Environment environment = Environment.getCurrentEnvironment();
-    return localize(key, environment.getLocale().toLanguageTag(), values);
+    Locale locale = environment != null ? environment.getLocale() : null;
+
+    return localize(key, locale != null ? locale.toLanguageTag() : null, values);
   }
 
-  /**
-   * This function localizes a phrase.
-   *
-   * @param key    The property key.
-   * @param locale A string-representation of a locale. If the locale is not set, the content language is used.
-   * @param values Placeholder values.
-   * @return The localized string.
-   */
   @Override
   public String localize(String key, String locale, List<String> values) {
-    return localize(key, locale, values, Lists.newArrayList(), null);
+    return localize(key, locale, values, List.of(), null);
   }
 
-  /**
-   * This function localizes a phrase.
-   *
-   * @param key    The property key.
-   * @param locale A string-representation of a locale. If the locale is not set, the content language is used.
-   * @param values Placeholder values.
-   * @param application The name of the application
-   * @return The localized string.
-   */
   @Override
   public String localize(String key, String locale, List<String> values, List<String> bundles, String application) {
-    Locale resolved = locale != null ? Locale.forLanguageTag(locale) : Locale.ROOT;
+    ApplicationKey resolved = application != null && !application.isBlank()
+      ? ApplicationKey.from(application)
+      : this.applicationKey;
 
-    return Phrases.localize(baseDirPath, resolved, key, values);
+    return Phrases.localize(
+      resourceServiceSupplier.get(),
+      resolved,
+      locale != null ? Locale.forLanguageTag(locale) : Locale.ROOT,
+      key,
+      values,
+      bundles
+    );
   }
 }
-

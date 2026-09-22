@@ -7,24 +7,16 @@ import com.enonic.xp.portal.url.PortalUrlService;
 import com.enonic.xp.resource.ResourceService;
 import com.enonic.xp.script.bean.BeanContext;
 import com.enonic.xp.script.bean.ScriptBean;
-import freemarker.cache.FileTemplateLoader;
-import freemarker.cache.MultiTemplateLoader;
 import freemarker.cache.TemplateLoader;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import no.item.freemarker.FreemarkerPortalObject;
+
+import java.util.function.Supplier;
 
 public class StorybookScriptBean implements ScriptBean {
   private Supplier<PortalUrlService> portalUrlServiceSupplier;
   private Supplier<PortalRequest> portalRequestSupplier;
   private Supplier<ResourceService> resourceServiceSupplier;
   private Supplier<LocaleService> localeServiceSupplier;
-  private ApplicationKey applicationKey;
 
   @Override
   public void initialize(BeanContext context) {
@@ -32,34 +24,26 @@ public class StorybookScriptBean implements ScriptBean {
     this.portalRequestSupplier = context.getBinding(PortalRequest.class);
     this.resourceServiceSupplier = context.getService(ResourceService.class);
     this.localeServiceSupplier = context.getService(LocaleService.class);
-    this.applicationKey = context.getApplicationKey();
   }
 
-  public FreemarkerPortalObject getPortalObject(String baseDirPath) {
-    return new StorybookPortalObject(portalUrlServiceSupplier, localeServiceSupplier, portalRequestSupplier, applicationKey, baseDirPath);
+  /**
+   * The {@code portal} object for templates of {@code appName}.
+   *
+   * <p>Deliberately keyed on the application being previewed rather than on this one
+   * ({@code context.getApplicationKey()}), so that {@code portal.localize} resolves the phrases of the app whose
+   * template is rendering — the same ones it would resolve in production.
+   */
+  public FreemarkerPortalObject getPortalObject(String appName) {
+    return new StorybookPortalObject(
+      portalUrlServiceSupplier,
+      localeServiceSupplier,
+      portalRequestSupplier,
+      resourceServiceSupplier,
+      ApplicationKey.from(appName)
+    );
   }
 
-  public MultiTemplateLoader getFileAndResourceTemplateLoader(List<String> dirPaths, String appName) {
-    List<TemplateLoader> loaders = createFileTemplateLoaders(dirPaths);
-
-    if (appName != null) {
-      ResourceTemplateLoader loader = new ResourceTemplateLoader(this.resourceServiceSupplier, appName);
-      loaders.add(loader);
-    }
-
-    return new MultiTemplateLoader(loaders.toArray((TemplateLoader[]::new)));
-  }
-
-
-  private static List<TemplateLoader> createFileTemplateLoaders(List<String> baseDirPaths) {
-    return baseDirPaths.stream()
-      .map(baseDir -> {
-        try {
-          return new FileTemplateLoader(new File(baseDir));
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      })
-      .collect(Collectors.toList());
+  public TemplateLoader getResourceTemplateLoader(String appName) {
+    return new ResourceTemplateLoader(this.resourceServiceSupplier, ApplicationKey.from(appName));
   }
 }

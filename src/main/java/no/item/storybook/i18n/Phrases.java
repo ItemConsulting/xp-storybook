@@ -1,103 +1,134 @@
 package no.item.storybook.i18n;
 
+import com.enonic.xp.app.ApplicationKey;
+import com.enonic.xp.resource.Resource;
+import com.enonic.xp.resource.ResourceKey;
+import com.enonic.xp.resource.ResourceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.Reader;
+import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.Optional;
+import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 
 /**
- * Loads the "phrases" bundle from a directory on disk, the way Storybook previews supply i18n.
+ * Resolves phrases from an application's {@code /i18n} resources, the way XP's own {@code LocaleService} does, but
+ * reading them again on every call.
  *
- * <p>Both lookups are best-effort on purpose. XP's own {@code localize} answers with a short marker
- * when a phrase cannot be resolved, and a preview should do the same: a project with no phrases
- * file at all — or a key that has not been translated yet — is an ordinary state while authoring,
- * not an error worth replacing the rendered component with a stack trace.
+ * <p>Deliberately not {@code LocaleService}: that caches a message bundle per application and locale, so an edited
+ * {@code phrases.properties} would not show up until the application was deployed again. A preview exists to show
+ * what the files on disk currently say, and {@link ResourceService#getResource} is uncached — in development mode it
+ * reads straight from the application's source directory — so resolving a phrase per call is what keeps phrases as
+ * live as the templates that use them.
+ *
+ * <p>Everything else mirrors {@code LocaleServiceImpl} and {@code MessageBundleImpl}: the same default base name, the
+ * same candidate-locale chain, and {@link MessageFormat} for the values, so a phrase resolves here exactly as it
+ * would in production.
  */
 public final class Phrases {
-  private static final Logger log = LoggerFactory.getLogger(Phrases.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Phrases.class);
 
+  /** What XP answers with when a phrase cannot be resolved. */
   public static final String NOT_TRANSLATED = "NOT_TRANSLATED";
 
-  private static final String BUNDLE_NAME = "phrases";
+  private static final List<String> DEFAULT_BASE_NAMES = List.of("/i18n/phrases");
 
   private Phrases() {
   }
 
   /**
-   * Resolves {@code key} against the phrases bundle found under {@code baseDirPath}.
-   *
-   * @return the phrase with {@code values} substituted for {0}, {1}, ..., or {@link #NOT_TRANSLATED}
-   *     if there is no bundle or the bundle has no such key.
+   * @param locale the locale to resolve for, or {@code null} for {@link Locale#ROOT}.
+   * @param values substituted into the phrase by {@link MessageFormat}. An empty list leaves the phrase as it is,
+   *     placeholders and all, which is also what XP does.
+   * @param bundleNames base names to read, or empty for {@code /i18n/phrases}.
+   * @return the phrase, or {@link #NOT_TRANSLATED} if there is no such key.
    */
-  public static String localize(final String baseDirPath, final Locale locale, final String key,
-                                final List<String> values) {
-    if (baseDirPath == null) {
-      log.warn("No base directory set for localization, returning '{}'", NOT_TRANSLATED);
+  public static String localize(final ResourceService resourceService, final ApplicationKey applicationKey,
+                                final Locale locale, final String key, final List<String> values,
+                                final List<String> bundleNames) {
+    if (key == null) {
       return NOT_TRANSLATED;
     }
 
-    return find(baseDirPath, locale)
-      .filter(bundle -> bundle.containsKey(key))
-      .map(bundle -> applyValues(bundle.getString(key), values))
-      .orElse(NOT_TRANSLATED);
+    final Locale nonNullLocale = locale != null ? locale : Locale.ROOT;
+    final Properties properties = load(resourceService, applicationKey, nonNullLocale, bundleNames);
+    final String message = properties.getProperty(key, "");
+
+    return message.isEmpty() ? NOT_TRANSLATED : format(message, nonNullLocale, values);
   }
 
   /**
-   * Loads the phrases bundle from {@code <baseDirPath>/i18n}, falling back to
-   * {@code <baseDirPath>/site/i18n} for projects that keep their phrases under the site directory.
-   *
-   * @return empty when neither directory holds a matching bundle.
+   * Reads every candidate bundle, least specific first, so that a more specific one overrides it — the parent chain
+   * {@link ResourceBundle} would otherwise give us.
    */
-  public static Optional<ResourceBundle> find(final String baseDirPath, final Locale locale) {
-    if (baseDirPath == null) {
-      return Optional.empty();
+  private static Properties load(final ResourceService resourceService, final ApplicationKey applicationKey,
+                                 final Locale locale, final List<String> bundleNames) {
+    final Properties properties = new Properties();
+
+    for (final ResourceKey resourceKey : candidateKeys(applicationKey, locale, bundleNames)) {
+      final Resource resource = resourceService.getResource(resourceKey);
+
+      if (resource.exists()) {
+        properties.putAll(read(resource));
+      }
     }
 
-    return load(new File(baseDirPath, "i18n"), locale)
-      .or(() -> load(new File(baseDirPath + File.separator + "site", "i18n"), locale));
+    return properties;
   }
 
-  private static Optional<ResourceBundle> load(final File dir, final Locale locale) {
-    if (!dir.isDirectory()) {
-      return Optional.empty();
+  private static List<ResourceKey> candidateKeys(final ApplicationKey applicationKey, final Locale locale,
+                                                 final List<String> bundleNames) {
+    final ResourceBundle.Control control = ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_PROPERTIES);
+    final List<String> baseNames = bundleNames == null || bundleNames.isEmpty() ? DEFAULT_BASE_NAMES : bundleNames;
+    final List<ResourceKey> keys = new ArrayList<>();
+
+    for (final String baseName : baseNames) {
+      final String normalized = baseName.startsWith("/") ? baseName : "/" + baseName;
+      final List<Locale> candidateLocales = new ArrayList<>(control.getCandidateLocales(normalized, locale));
+      Collections.reverse(candidateLocales);
+
+      for (final Locale candidateLocale : candidateLocales) {
+        keys.add(ResourceKey.from(applicationKey, control.toBundleName(normalized, candidateLocale) + ".properties"));
+      }
     }
 
-    // Deliberately a fresh loader per call, not a cached one: ResourceBundle keys its cache on the
-    // class loader, so reusing one would also reuse the parsed bundle and stop picking up edits to
-    // phrases.properties — which is the whole point of a live preview. Closing it releases the file
-    // handle; the bundle is fully read into memory by then.
-    try (URLClassLoader loader = new URLClassLoader(new URL[]{dir.toURI().toURL()})) {
-      return Optional.of(ResourceBundle.getBundle(BUNDLE_NAME, locale, loader));
-    } catch (final MissingResourceException e) {
-      // No phrases.properties in this directory. Normal while authoring; the caller falls back to
-      // NOT_TRANSLATED rather than failing the render.
-      log.debug("No '{}' bundle in {}", BUNDLE_NAME, dir, e);
-      return Optional.empty();
+    return keys;
+  }
+
+  private static Properties read(final Resource resource) {
+    final Properties properties = new Properties();
+
+    try (Reader reader = resource.openReader()) {
+      properties.load(reader);
     } catch (final IOException e) {
-      log.error("Could not load resource bundle from {}", dir, e);
-      return Optional.empty();
+      LOG.warn("Could not read phrases from {}", resource.getKey(), e);
     }
+
+    return properties;
   }
 
-  private static String applyValues(final String phrase, final List<String> values) {
+  private static String format(final String message, final Locale locale, final List<String> values) {
     if (values == null || values.isEmpty()) {
-      return phrase;
+      return message;
     }
 
-    String result = phrase;
+    final MessageFormat messageFormat = new MessageFormat(message, locale);
 
-    for (int i = 0; i < values.size(); i++) {
-      result = result.replace("{" + i + "}", values.get(i));
+    for (final Object format : messageFormat.getFormats()) {
+      if (format instanceof DateFormat dateFormat) {
+        dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+      }
     }
 
-    return result;
+    return messageFormat.format(values.toArray());
   }
 }

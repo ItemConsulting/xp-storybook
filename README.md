@@ -31,9 +31,9 @@ the Web endpoint:
 http://localhost:8080/api/no.item.storybook:preview/<path/to/template>
 ```
 
-The path is resolved relative to `xpResourcesDirPath`, and only `.ftl`, `.ftlh`, `.ftlx` and
-`.html` files can be rendered — anything else is rejected with a `400`. Since the caller supplies
-`xpResourcesDirPath`, this is what keeps the endpoint from being used to read arbitrary files.
+This endpoint can only ever read resources belonging to an installed application.
+When XP runs in **development mode** an application built in dev mode serves its resources from `src/main/resources` 
+from the disk.
 
 ## Config
 
@@ -51,16 +51,52 @@ mapping.api.idProvider.system = default
 
 ### Reserved query parameters
 
-| Parameter            | Purpose                                                                                  |
-|----------------------|------------------------------------------------------------------------------------------|
-| `template`           | Renders this string as an inline template instead of loading one from disk                 |
-| `renderMode`         | `freemarker` or `thymeleaf`. Inferred from the extension (`.ftl`/`.ftlh`/`.ftlx` → FreeMarker, `.html` → Thymeleaf) when omitted |
-| `xpResourcesDirPath` | **Required.** The directories to resolve templates from, as a comma separated list        |
-| `xpAppName`          | Application to resolve templates from when they are not on disk                            |
-| `javaTypes`          | JSON mapping model keys to a type (`number`, `localDate`, `zonedDateTime`, `region`, ...)  |
-| `matchers`           | JSON mapping a type to a `/regex/` matched against model keys                              |
+| Parameter   | Purpose                                                                                    |
+|-------------|--------------------------------------------------------------------------------------------|
+| `xpAppName` | **Required.** The application whose resources hold the template                            |
+| `template`  | Renders this string as an inline template instead of loading one from disk                 |
+| `javaTypes` | JSON mapping model keys to a type (`number`, `localDate`, `zonedDateTime`, `region`, ...)  |
+| `matchers`  | JSON mapping a type to a `/regex/` matched against model keys                              |
 
-Any other query parameter is passed to the template as a model value.
+Any other query parameter is passed to the template as a *model value*.
+
+### Requirements
+
+The application being previewed must be **installed in the sandbox**, and built with dev source
+paths if you want edits to show up without a rebuild.
+
+What writes the source paths is the `env=dev` Gradle property: it puts an `X-Source-Paths` manifest
+header in the jar, which is what XP reads to serve the application's resources from disk. 
+
+There are two ways to set it:
+
+```sh
+# Using gradle for a single deploy (and use Storybook after that)
+./gradlew deploy -Penv=dev
+```
+
+```sh
+# Continuously run builds in the background
+enonic project dev
+```
+
+> [!CAUTION]
+> `enonic project deploy` on its own does **not** set `X-Source-Paths`, so files will not be read from disk!
+
+Applications that are not deployed with `env=dev` will not load files from disk, but use the templates **found in the 
+jar-files** (also applications installed from Enonic Market).
+
+## Libraries
+
+A library has no application key of its own, so it cannot be previewed on its own. Point Storybook at
+an application that `include`s the library, and add the library's resources to that application's dev
+source paths:
+
+```groovy
+app {
+  rawDevSourcePaths.add(file("../lib-xp-forms/src/main/resources").canonicalPath)
+}
+```
 
 ## Getting started
 

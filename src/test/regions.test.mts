@@ -13,7 +13,7 @@ import { expect } from "./expect.mts";
 const VIEW: RenderParams = {
   type: "file",
   filePath: "part.ftl",
-  xpResourcesDirPath: "/src",
+  xpAppName: "com.example.app",
 };
 
 function part(descriptor: string, path: string, config: Record<string, unknown> = {}): Component {

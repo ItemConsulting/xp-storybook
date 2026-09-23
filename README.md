@@ -4,6 +4,7 @@ This application integrates with [Storybook Server renderer](https://www.npmjs.c
 render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-freemarker/) or [Thymeleaf templates](https://github.com/enonic/lib-thymeleaf) with the `args` from Storybook.
 
 ![Build badge](https://github.com/ItemConsulting/xp-storybook/actions/workflows/main.yml/badge.svg)
+![Enonic XP8 badge](https://market.enonic.com/badges/xp8.svg)
 [![](https://repo.itemtest.no/api/badge/latest/releases/no/item/xp-storybook)](https://repo.itemtest.no/#/releases/no/item/xp-storybook)
 [![](https://img.shields.io/npm/types/%40itemconsulting%2Fxp-storybook-utils)](https://www.npmjs.com/package/@itemconsulting/xp-storybook-utils)
 
@@ -11,9 +12,7 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 
 > [!CAUTION]  
 > This application should **never** be deployed in production! An attacker can use this application to render any 
-> content on your domain. 
->
-> The app will only render templates when Enonic XP runs in **development mode**.
+> content on your domain.
 
 ## Versions
 
@@ -25,15 +24,14 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 ### The rendering endpoint
 
 The app exposes a [Universal API](https://developer.enonic.com/docs/code/stable/web/apis) named `preview`, mounted on 
-the Web endpoint:
-
-```
-http://localhost:8080/api/no.item.storybook:preview/<path/to/template>
-```
+the Web endpoint: `http://localhost:8080/api/no.item.storybook:preview/<path/to/template>`
 
 This endpoint can only ever read resources belonging to an installed application.
-When XP runs in **development mode** an application built in dev mode serves its resources from `src/main/resources` 
+When XP runs in **development mode** an application built with `env=dev` serves its resources from `src/main/resources` 
 from the disk.
+
+> [!NOTE]
+> The app will only render templates when Enonic XP runs in **development mode**.
 
 ## Config
 

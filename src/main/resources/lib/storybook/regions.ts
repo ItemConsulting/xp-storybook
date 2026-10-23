@@ -1,6 +1,6 @@
 import type { ComponentDescriptor, LayoutComponent, PageComponent, PartComponent, Region } from "@enonic-types/core";
 import type { RenderFn, ViewMap } from "/lib/storybook/params";
-import { filterObject, flatMap } from "/lib/storybook/utils";
+import { endsWith, filterObject, flatMap } from "/lib/storybook/utils";
 
 export type { ComponentDescriptor } from "@enonic-types/core";
 export type Component = PageComponent | PartComponent | LayoutComponent;
@@ -51,8 +51,8 @@ export function getRegionComponents(regions: Region[]): Component[] {
   return flatMap(regions, (region) => region.components as Component[]);
 }
 
-export function findRegions(rec: Record<string, unknown>, region: RegExp): Array<Region> {
-  return objectValues(filterObject(rec, (_val, key) => region.test(key))).filter(isRegion);
+export function findRegions(rec: Record<string, unknown>, keySuffix: string): Array<Region> {
+  return objectValues(filterObject(rec, (_val, key) => endsWith(key, keySuffix))).filter(isRegion);
 }
 
 export function isComponentDescriptor(value: string): value is ComponentDescriptor {

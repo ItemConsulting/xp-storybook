@@ -1,4 +1,4 @@
-import { deserializeJsonEntries, isJsonString, parseMatchers } from "/lib/storybook/deserializing";
+import { deserializeJsonEntries, isJsonString, REGION_KEY_SUFFIX } from "/lib/storybook/deserializing";
 import type { TemplateErrors } from "/lib/storybook/errors";
 import {
   type Component,
@@ -56,24 +56,23 @@ export type ParsedParams = {
 };
 
 export function parseParams(params: Record<string, string>): ParsedParams {
-  const { template, javaTypes, matchers } = params;
+  const { template } = params;
   // Deliberately not object rest (`...extra`): the bundler lowers it with a helper that calls
   // Array.prototype.includes, which Nashorn does not have. See tsdown.config.mts.
   // The reserved parameters configure the renderer, so none of them belongs in the model.
+  // `javaTypes` and `matchers` are no longer read, but older clients still send them.
   const extra = filterObject(
     params,
     (_value, key) => key !== "template" && key !== "javaTypes" && key !== "matchers" && key !== "xpAppName",
   );
   const [views, rawModel] = split(extra, (_value, key) => isComponentDescriptor(key));
-  const parsedMatchers = parseMatchers(JSON.parse(matchers ?? "{}"));
-  const parsedJavaTypes = JSON.parse(javaTypes ?? "{}");
-  const model = deserializeJsonEntries(rawModel, parsedMatchers, parsedJavaTypes);
+  const model = deserializeJsonEntries(rawModel);
 
   return {
     template,
     views: parseViews(views, params.xpAppName),
     model,
-    components: parsedMatchers.region ? getRegionComponents(findRegions(model, parsedMatchers.region)) : [],
+    components: getRegionComponents(findRegions(model, REGION_KEY_SUFFIX)),
     xpAppName: params.xpAppName,
   };
 }

@@ -4,16 +4,16 @@
   "description": "Creates a preview for storybook server",
   "private": true,
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "^2.6.2",
     "@changesets/cli": "^3.0.3",
     "@enonic-types/core": "8.0.0",
     "@enonic-types/global": "8.0.0",
     "@item-enonic-types/lib-freemarker": "^4.0.0",
-    "@item-enonic-types/lib-time": "^1.6.1",
-    "@swc/core": "^1.16.2",
+    "@item-enonic-types/lib-time": "^2.0.0",
+    "@swc/core": "^1.16.20",
     "@types/node": "^24.13.5",
-    "concurrently": "^10.0.5",
-    "tsdown": "^0.23.0",
+    "concurrently": "^10.0.6",
+    "tsdown": "^0.23.2",
     "typescript": "^7.0.2"
   },
   "scripts": {
@@ -27,6 +27,6 @@
     "lint:fix": "biome check --write",
     "release": "changeset publish",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./src/test/register.mjs --test src/test/*.test.mts",
-    "versioning": "npx changeset version && npm i --package-lock-only && NEW_VERSION=$(node -p \"require('./package.json').version\") && sed -i -E \"s/^version *=.*/version = ${NEW_VERSION}/\" gradle.properties"
+    "versioning": "changeset version && npm i --package-lock-only && node .changeset/gradle-version.mjs"
   }
 }

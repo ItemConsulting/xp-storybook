@@ -5,7 +5,6 @@ import {
   escapeHtml,
   filterObject,
   flatMap,
-  pick,
   split,
   substringAfter,
   traverse,
@@ -27,25 +26,6 @@ describe("substringAfter", () => {
   });
 });
 
-describe("pick", () => {
-  it("reads a nested value by path", () => {
-    expect(pick({ a: { b: { c: "found" } } }, ["a", "b", "c"])).toBe("found");
-  });
-
-  it("returns undefined when the path leaves the object", () => {
-    expect(pick({ a: "not-an-object" }, ["a", "b"])).toBeUndefined();
-    expect(pick({ a: {} }, ["a", "b", "c"])).toBeUndefined();
-  });
-
-  it("returns the input itself for an empty path", () => {
-    expect(pick("value", [])).toBe("value");
-  });
-
-  it("does not traverse into arrays", () => {
-    expect(pick({ a: ["x"] }, ["a", "0"])).toBeUndefined();
-  });
-});
-
 describe("traverse", () => {
   it("applies the function to every key, depth first", () => {
     const seen: string[] = [];
@@ -54,15 +34,6 @@ describe("traverse", () => {
       return value;
     });
     expect(seen).toEqual(["a", "b", "c"]);
-  });
-
-  it("passes the full path of each key", () => {
-    const paths: string[][] = [];
-    traverse({ a: { b: { c: 1 } } }, (_key, value, path) => {
-      paths.push(path);
-      return value;
-    });
-    expect(paths).toEqual([["a"], ["a", "b"], ["a", "b", "c"]]);
   });
 
   it("maps values and recurses into records inside arrays", () => {

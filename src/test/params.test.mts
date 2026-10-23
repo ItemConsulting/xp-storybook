@@ -56,7 +56,7 @@ describe("parseParams", () => {
     expect(parseParams({ xpAppName: "com.example.app" }).xpAppName).toBe("com.example.app");
   });
 
-  it("keeps template, javaTypes and matchers out of the model", () => {
+  it("keeps template and the retired javaTypes and matchers out of the model", () => {
     const parsed = parseParams({
       template: "<p>t</p>",
       javaTypes: "{}",
@@ -71,20 +71,13 @@ describe("parseParams", () => {
     expect(parsed.model).not.toHaveProperty("matchers");
   });
 
-  it("applies javaTypes to the model", () => {
-    const parsed = parseParams({
-      count: "42",
-      javaTypes: JSON.stringify({ count: "number" }),
-      xpAppName: "com.example.app",
-    });
-
-    expect(parsed.model.count).toBe(42);
+  it("deserializes the model by key convention", () => {
+    expect(parseParams({ itemCount: "42", xpAppName: "com.example.app" }).model.itemCount).toBe(42);
   });
 
-  it("collects components from the regions named by the region matcher", () => {
+  it("collects components from the regions whose key ends in Region", () => {
     const parsed = parseParams({
-      main: JSON.stringify({ components: [{ type: "part", descriptor: "app:a", path: "/main/0", config: {} }] }),
-      matchers: JSON.stringify({ region: "/^main$/" }),
+      mainRegion: JSON.stringify({ components: [{ type: "part", descriptor: "app:a", path: "/main/0", config: {} }] }),
       xpAppName: "com.example.app",
     });
 
@@ -92,7 +85,7 @@ describe("parseParams", () => {
     expect(parsed.components[0].descriptor).toBe("app:a");
   });
 
-  it("returns no components when no region matcher is given", () => {
+  it("returns no components from a region whose key does not end in Region", () => {
     const parsed = parseParams({ main: '{"components":[]}', xpAppName: "com.example.app" });
     expect(parsed.components).toEqual([]);
   });

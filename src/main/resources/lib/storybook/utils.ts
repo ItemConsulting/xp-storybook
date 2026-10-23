@@ -1,21 +1,10 @@
-export function pick(value: unknown, path: string[]): unknown {
-  return path.reduce((res: unknown, key: string) => {
-    if (isRecord(res)) {
-      return res[key];
-    } else {
-      return undefined;
-    }
-  }, value);
-}
-
 export function substringAfter(str: string, delimiter: string): string {
   return str.substring(str.indexOf(delimiter) + delimiter.length);
 }
 
 export function traverse(
   obj: Record<string, unknown>,
-  f: (key: string, value: unknown, path: string[]) => unknown,
-  path: string[] = [],
+  f: (key: string, value: unknown) => unknown,
 ): Record<string, unknown> {
   const res: Record<string, unknown> = {};
 
@@ -23,11 +12,11 @@ export function traverse(
     // The suggested Object.hasOwn is ES2022, and Nashorn (XP's server-side engine) does not have it.
     // biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is not available on Nashorn
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = f(key, obj[key], path.concat(key));
+      const value = f(key, obj[key]);
       res[key] = isRecord(value)
-        ? traverse(value, f, path.concat(key))
+        ? traverse(value, f)
         : Array.isArray(value)
-          ? value.map((val) => (isRecord(val) ? traverse(val, f, path.concat(key)) : f(key, val, path)))
+          ? value.map((val) => (isRecord(val) ? traverse(val, f) : f(key, val)))
           : value;
     }
   }

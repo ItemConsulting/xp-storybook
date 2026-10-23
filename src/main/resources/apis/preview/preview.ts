@@ -36,8 +36,6 @@ function corsHeaders(req: Request): Record<string, string> {
 type QueryParams = {
   xpAppName: string;
   template: string;
-  javaTypes: string;
-  matchers: string;
 };
 
 export function all(req: Request<{ params: QueryParams }>): Response {

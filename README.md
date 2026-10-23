@@ -6,7 +6,7 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 ![Build badge](https://github.com/ItemConsulting/xp-storybook/actions/workflows/main.yml/badge.svg)
 ![Enonic XP8 badge](https://market.enonic.com/badges/xp8.svg)
 [![](https://repo.itemtest.no/api/badge/latest/releases/no/item/xp-storybook)](https://repo.itemtest.no/#/releases/no/item/xp-storybook)
-[![](https://img.shields.io/npm/types/%40itemconsulting%2Fxp-storybook-utils)](https://www.npmjs.com/package/@itemconsulting/xp-storybook-utils)
+[![](https://img.shields.io/npm/types/%40itemconsulting%2Fstorybook-framework-enonic-xp)](https://www.npmjs.com/package/@itemconsulting/storybook-framework-enonic-xp)
 
 <img src="https://github.com/ItemConsulting/xp-storybook/raw/main/docs/icon.svg?sanitize=true" width="150">
 
@@ -21,13 +21,19 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 | 8.x       | 2.x          |
 | 7.x       | 1.x          |
 
+## Getting started
+
+Install the application from [Enonic Market](https://market.enonic.com/vendors/item-consulting-as/storybook).
+
+You will find information on how to set up your project in the [Enonic XP Storybook Framework documentation](https://github.com/ItemConsulting/storybook-framework-enonic-xp).
+
 ### The rendering endpoint
 
-The app exposes a [Universal API](https://developer.enonic.com/docs/code/stable/web/apis) named `preview`, mounted on 
+The app exposes a [Universal API](https://developer.enonic.com/docs/code/stable/web/apis) named `preview`, mounted on
 the Web endpoint: `http://localhost:8080/api/no.item.storybook:preview/<path/to/template>`
 
 This endpoint can only ever read resources belonging to an installed application.
-When XP runs in **development mode** an application built with `env=dev` serves its resources from `src/main/resources` 
+When XP runs in **development mode** an application built with `env=dev` serves its resources from `src/main/resources`
 from the disk.
 
 > [!NOTE]
@@ -49,14 +55,28 @@ mapping.api.idProvider.system = default
 
 ### Reserved query parameters
 
-| Parameter   | Purpose                                                                                    |
-|-------------|--------------------------------------------------------------------------------------------|
-| `xpAppName` | **Required.** The application whose resources hold the template                            |
-| `template`  | Renders this string as an inline template instead of loading one from disk                 |
-| `javaTypes` | JSON mapping model keys to a type (`number`, `localDate`, `zonedDateTime`, `region`, ...)  |
-| `matchers`  | JSON mapping a type to a `/regex/` matched against model keys                              |
+| Parameter   | Purpose                                                                    |
+| ----------- | -------------------------------------------------------------------------- |
+| `xpAppName` | **Required.** The application whose resources hold the template            |
+| `template`  | Renders this string as an inline template instead of loading one from disk |
 
-Any other query parameter is passed to the template as a *model value*.
+Any other query parameter is passed to the template as a _model value_.
+
+### Model value conventions
+
+A model value gets its type from the end of its key, at any depth in the model:
+
+| Key ends in      | Value is parsed as                                                                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Region`         | A region (JSON). At the top level of the model, its components are rendered with the views given as query parameters                                 |
+| `Date`           | `LocalDate` (`2024-01-01`), `LocalDateTime` (`2024-01-01T12:00`) or `ZonedDateTime` (`2024-01-01T12:00+01:00`, `…Z`, `…[Europe/Oslo]`), by its shape |
+| `Count` or `Int` | An integer, if the value is one (`42`, `-3`). Otherwise it stays a string                                                                            |
+
+Any other value is parsed as JSON if it looks like an array, an object, a boolean or `null`, and is a string otherwise.
+The match is case-sensitive, so `date` on its own is left alone.
+
+Only a top-level `…Region` has its components rendered. A region nested inside another value, like
+`page={"mainRegion": {...}}`, is parsed as JSON, but its components are not rendered.
 
 ### Requirements
 
@@ -64,7 +84,7 @@ The application being previewed must be **installed in the sandbox**, and built 
 paths if you want edits to show up without a rebuild.
 
 What writes the source paths is the `env=dev` Gradle property: it puts an `X-Source-Paths` manifest
-header in the jar, which is what XP reads to serve the application's resources from disk. 
+header in the jar, which is what XP reads to serve the application's resources from disk.
 
 There are two ways to set it:
 
@@ -95,12 +115,6 @@ app {
   rawDevSourcePaths.add(file("../lib-xp-forms/src/main/resources").canonicalPath)
 }
 ```
-
-## Getting started
-
-Install the application from [Enonic Market](https://market.enonic.com/vendors/item-consulting-as/storybook).
-
-You will find information on how to set up your project in the [xp-storybook-utils documentation](https://github.com/ItemConsulting/xp-storybook-utils).
 
 ## Deploying
 

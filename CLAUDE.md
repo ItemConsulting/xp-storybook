@@ -16,11 +16,10 @@ That still reaches the working tree because of XP's dev mode: an application bui
 `env=dev` Gradle property (`enonic project dev`, or `./gradlew deploy -Penv=dev`; a plain
 `enonic project deploy` does **not** set it) carries an `X-Source-Paths` manifest header naming its
 source directories, and `ApplicationFactory` then puts a `ClassLoaderApplicationUrlResolver` over
-those directories *in front of* the installed jar. `ResourceService.getResource` is uncached and
+those directories _in front of_ the installed jar. `ResourceService.getResource` is uncached and
 returns a `file:` URL, so every call hits the file.
 
 Two consequences worth knowing:
-
 - An application built without `-Penv=dev` still renders, but from its jar. The endpoint detects
   this with `Resource.getResolverName() == "bundle"` and logs a warning; it is a legitimate case
   (previewing something from Enonic Market), so it never fails the request.
@@ -29,12 +28,12 @@ Two consequences worth knowing:
 
 ### Caches that have to stay off
 
-| Where | What keeps it live |
-| --- | --- |
-| Thymeleaf template resolution | `StorybookTemplateResolver.computeValidity` returns `NonCacheableCacheEntryValidity`. Do not "optimise" this. |
-| Thymeleaf engine | A `TemplateEngine` refuses to have its resolver replaced once it has rendered, so `ThymeleafService` builds a new one per render. It is also what keeps two requests with different `xpAppName` independent. |
-| FreeMarker | `freemarker.ts` sets the template loader, the `portal` object and the exception handler on the shared `Configuration` on every render. lib-xp-freemarker sets `templateUpdateDelayMilliseconds(0)` in dev mode. |
-| Phrases | `no.item.storybook.i18n.Phrases` reads the `/i18n` resources per call. |
+| Where                         | What keeps it live                                                                                                                                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Thymeleaf template resolution | `StorybookTemplateResolver.computeValidity` returns `NonCacheableCacheEntryValidity`. Do not "optimise" this.                                                                                                   |
+| Thymeleaf engine              | A `TemplateEngine` refuses to have its resolver replaced once it has rendered, so `ThymeleafService` builds a new one per render. It is also what keeps two requests with different `xpAppName` independent.    |
+| FreeMarker                    | `freemarker.ts` sets the template loader, the `portal` object and the exception handler on the shared `Configuration` on every render. lib-xp-freemarker sets `templateUpdateDelayMilliseconds(0)` in dev mode. |
+| Phrases                       | `no.item.storybook.i18n.Phrases` reads the `/i18n` resources per call.                                                                                                                                          |
 
 **Do not replace `Phrases` with XP's `LocaleService`.** It is the obvious move — it is the real
 thing, with the right semantics — and it was tried and reverted. `LocaleServiceImpl` caches a
@@ -56,7 +55,7 @@ one application's resources: a `ResourceKey` normalises with `Files.simplifyPath
 the application root, and both template loaders check every name against
 `no.item.storybook.render.TemplateExtensions`, so an inline template cannot include the `.ts`,
 `.properties` or `.yaml` files that sit under `src/main/resources` in dev. Keep that check on both
-loaders — the endpoint only checks the template it was *asked* for, not the ones that one pulls in,
+loaders — the endpoint only checks the template it was _asked_ for, not the ones that one pulls in,
 and the FreeMarker side went without it for a while.
 
 ### Verifying a change on the render path
@@ -73,5 +72,5 @@ curl -sG "http://localhost:8080/api/no.item.storybook:preview/<path>" \
 # The output must change with no rebuild and no redeploy.
 ```
 
-Do this for a template *and* for `phrases.properties`, in both flavors — they take different code
+Do this for a template _and_ for `phrases.properties`, in both flavors — they take different code
 paths, and the FreeMarker and Thymeleaf sides have drifted apart before.

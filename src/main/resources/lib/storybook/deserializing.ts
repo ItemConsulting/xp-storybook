@@ -1,83 +1,51 @@
-import { pick, traverse } from "/lib/storybook/utils";
+import { endsWith, traverse } from "/lib/storybook/utils";
 import { LocalDate, LocalDateTime, ZonedDateTime } from "/lib/time";
 
 const UN_JSONIFIED_OBJECT_STRING = "[object Object]";
 
-export type MatcherMap = Record<string, RegExp>;
+/** Model keys ending in this are regions, whose components are collected for rendering. */
+export const REGION_KEY_SUFFIX = "Region";
 
-/** javaTypes mirror the shape of the model, so a nested key is addressed by its path. */
-export type JavaTypeMap = { [key: string]: string | JavaTypeMap };
+const INTEGER = /^-?\d+$/;
+const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+const ZONED_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})(\[[^\]]+\])?$/;
 
-export function deserializeJsonEntries(
-  params: Record<string, string | undefined>,
-  parsedMatchers: MatcherMap,
-  parsedJavaTypes: JavaTypeMap,
-): Record<string, unknown> {
-  return traverse(params, (key, value, path) => {
-    const javaType = pick(parsedJavaTypes, path) ?? matchForJavaType(key, parsedMatchers);
-    if (typeof javaType === "string" && typeof value === "string") {
-      return deserializeJavaObjects(value, javaType);
-    } else if (typeof value === "string" && isJsonString(value)) {
-      try {
-        return JSON.parse(value);
-      } catch {
-        log.warning(`Could not parse "${key}" as JSON: ${value}`);
-      }
-    }
-    return value;
-  });
+export function deserializeJsonEntries(params: Record<string, string | undefined>): Record<string, unknown> {
+  return traverse(params, (key, value) => (typeof value === "string" ? deserializeByKey(key, value) : value));
 }
 
-function matchForJavaType(key: string, parsedMatchers: Record<string, RegExp>): string | undefined {
-  for (const matcherKey in parsedMatchers) {
-    if (parsedMatchers[matcherKey].test(key)) {
-      return matcherKey;
-    }
-  }
+/**
+ * Deserializes a value going by its key: `…Date` is a date of whatever kind its shape says, and `…Count` or `…Int` is
+ * an integer if it is one. Anything else, a `…Region` included, is parsed if it looks like JSON.
+ *
+ * A value that cannot be parsed, like the date-shaped "2024-02-30", is kept as a string, so one bad value never fails
+ * the whole preview.
+ */
+function deserializeByKey(key: string, value: string): unknown {
+  const isDate = endsWith(key, "Date");
 
-  return undefined;
-}
-
-export function parseMatchers(matchers: Record<string, string>): MatcherMap {
-  const res: MatcherMap = {};
-
-  for (const key in matchers) {
-    const regex = stringToRegex(matchers[key]);
-    if (regex) {
-      res[key] = regex;
-    }
-  }
-
-  return res;
-}
-
-function stringToRegex(str: string): RegExp | undefined {
-  const re = /\/(.+)\/([gim]?)/;
-  const match = str.match(re);
-  if (match) {
-    return new RegExp(match[1], match[2]);
-  }
-  return undefined;
-}
-
-export function deserializeJavaObjects(value: string, type: string): unknown {
-  switch (type) {
-    case "localDate":
+  try {
+    if (isDate && LOCAL_DATE.test(value)) {
       return LocalDate.parse(value);
-    case "zonedDateTime":
-      return ZonedDateTime.parse(value);
-    case "localDateTime":
+    } else if (isDate && LOCAL_DATE_TIME.test(value)) {
       return LocalDateTime.parse(value);
-    case "number":
+    } else if (isDate && ZONED_DATE_TIME.test(value)) {
+      return ZonedDateTime.parse(value);
+    } else if ((endsWith(key, "Count") || endsWith(key, "Int")) && INTEGER.test(value)) {
       return parseInt(value, 10);
-    case "region":
+    } else if (isJsonString(value)) {
       return JSON.parse(value);
-    // `type` is a plain string, so this case is the only place documenting "string" as supported.
-    // biome-ignore lint/complexity/noUselessSwitchCase: documents a supported value
-    case "string":
-    default:
-      return value;
+    }
+  } catch (e) {
+    log.warning(`Could not parse "${key}": ${value} (${e})`);
+    return value;
   }
+
+  if (isDate) {
+    log.warning(`"${key}" ends in "Date", but "${value}" is not an ISO date, date-time or zoned date-time`);
+  }
+  return value;
 }
 
 export function isJsonString(str: string): boolean {

@@ -38,15 +38,15 @@ describe("findRegions", () => {
       otherRegion: region("side", []),
       title: "not a region",
     };
-    expect(findRegions(model, /Region$/)).toHaveLength(2);
+    expect(findRegions(model, "Region")).toHaveLength(2);
   });
 
   it("skips matching keys that are not regions", () => {
-    expect(findRegions({ fakeRegion: { notComponents: [] } }, /Region$/)).toEqual([]);
+    expect(findRegions({ fakeRegion: { notComponents: [] } }, "Region")).toEqual([]);
   });
 
   it("returns nothing when no key matches", () => {
-    expect(findRegions({ myRegion: region("main", []) }, /nope/)).toEqual([]);
+    expect(findRegions({ myRegion: region("main", []) }, "nope")).toEqual([]);
   });
 });
 

@@ -4,7 +4,7 @@
 [versions]
 freemarker-java8 = "3.0.3"
 xp-freemarker = "4.0.0"
-xp-time = "1.6.1"
+xp-time = "2.0.0"
 thymeleaf = "3.0.0"
 # lib-thymeleaf declares Thymeleaf itself as a runtime dependency, so it never reaches the compile
 # classpath. Keep this in step with the engine version the lib-thymeleaf release above bundles.

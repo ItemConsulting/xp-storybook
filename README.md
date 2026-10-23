@@ -25,7 +25,18 @@ render [Apache FreeMarker templates](https://github.com/ItemConsulting/lib-xp-fr
 
 Install the application from [Enonic Market](https://market.enonic.com/vendors/item-consulting-as/storybook).
 
-You will find information on how to set up your project in the [Enonic XP Storybook Framework documentation](https://github.com/ItemConsulting/storybook-framework-enonic-xp).
+Then set up Storybook in your XP project by running this in the project's root:
+
+```sh
+npx @itemconsulting/storybook-framework-enonic-xp@latest init
+```
+
+It adds the Storybook configuration, the Vitest setup for running stories as tests, and the `storybook` script, and it
+installs the dependencies.
+
+Deploy your application in dev mode (`enonic project dev`) and start Storybook with `npm run storybook`.
+
+You will find more information on how to set up your project and write stories in the [Enonic XP Storybook Framework documentation](https://github.com/ItemConsulting/storybook-framework-enonic-xp).
 
 ### The rendering endpoint
 

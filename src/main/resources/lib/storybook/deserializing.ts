@@ -21,8 +21,16 @@ export function deserializeJsonEntries(params: Record<string, string | undefined
  * looks like JSON.
  */
 function deserializeByKey(key: string, value: string): unknown {
-  if (endsWith(key, "Date")) {
-    return parseDate(key, value);
+  const isDate = endsWith(key, "Date");
+
+  if (isDate && LOCAL_DATE.test(value)) {
+    return LocalDate.parse(value);
+  } else if (isDate && LOCAL_DATE_TIME.test(value)) {
+    return LocalDateTime.parse(value);
+  } else if (isDate && ZONED_DATE_TIME.test(value)) {
+    return ZonedDateTime.parse(value);
+  } else if (isDate) {
+    log.warning(`"${key}" ends in "Date", but "${value}" is not an ISO date, date-time or zoned date-time`);
   } else if ((endsWith(key, "Count") || endsWith(key, "Number")) && DIGITS.test(value)) {
     return parseInt(value, 10);
   } else if (isJsonString(value)) {
@@ -32,19 +40,6 @@ function deserializeByKey(key: string, value: string): unknown {
       log.warning(`Could not parse "${key}" as JSON: ${value}`);
     }
   }
-  return value;
-}
-
-function parseDate(key: string, value: string): unknown {
-  if (LOCAL_DATE.test(value)) {
-    return LocalDate.parse(value);
-  } else if (LOCAL_DATE_TIME.test(value)) {
-    return LocalDateTime.parse(value);
-  } else if (ZONED_DATE_TIME.test(value)) {
-    return ZonedDateTime.parse(value);
-  }
-
-  log.warning(`"${key}" ends in "Date", but "${value}" is not an ISO date, date-time or zoned date-time`);
   return value;
 }
 

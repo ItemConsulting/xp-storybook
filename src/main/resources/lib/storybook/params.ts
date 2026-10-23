@@ -60,11 +60,7 @@ export function parseParams(params: Record<string, string>): ParsedParams {
   // Deliberately not object rest (`...extra`): the bundler lowers it with a helper that calls
   // Array.prototype.includes, which Nashorn does not have. See tsdown.config.mts.
   // The reserved parameters configure the renderer, so none of them belongs in the model.
-  // `javaTypes` and `matchers` are no longer read, but older clients still send them.
-  const extra = filterObject(
-    params,
-    (_value, key) => key !== "template" && key !== "javaTypes" && key !== "matchers" && key !== "xpAppName",
-  );
+  const extra = filterObject(params, (_value, key) => key !== "template" && key !== "xpAppName");
   const [views, rawModel] = split(extra, (_value, key) => isComponentDescriptor(key));
   const model = deserializeJsonEntries(rawModel);
 

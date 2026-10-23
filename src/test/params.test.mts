@@ -56,21 +56,6 @@ describe("parseParams", () => {
     expect(parseParams({ xpAppName: "com.example.app" }).xpAppName).toBe("com.example.app");
   });
 
-  it("keeps template and the retired javaTypes and matchers out of the model", () => {
-    const parsed = parseParams({
-      template: "<p>t</p>",
-      javaTypes: "{}",
-      matchers: "{}",
-      heading: "Hello",
-      xpAppName: "com.example.app",
-    });
-
-    expect(parsed.template).toBe("<p>t</p>");
-    expect(parsed.model).not.toHaveProperty("template");
-    expect(parsed.model).not.toHaveProperty("javaTypes");
-    expect(parsed.model).not.toHaveProperty("matchers");
-  });
-
   it("deserializes the model by key convention", () => {
     expect(parseParams({ itemCount: "42", xpAppName: "com.example.app" }).model.itemCount).toBe(42);
   });

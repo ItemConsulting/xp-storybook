@@ -66,14 +66,17 @@ Any other query parameter is passed to the template as a _model value_.
 
 A model value gets its type from the end of its key, at any depth in the model:
 
-| Key ends in         | Value is parsed as                                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Region`            | A region (JSON). Its components are rendered with the views given as query parameters                                                                |
-| `Date`              | `LocalDate` (`2024-01-01`), `LocalDateTime` (`2024-01-01T12:00`) or `ZonedDateTime` (`2024-01-01T12:00+01:00`, `…Z`, `…[Europe/Oslo]`), by its shape |
-| `Count` or `Number` | An integer, if the value is all digits. Otherwise it stays a string (`+47 123 45 678`)                                                               |
+| Key ends in      | Value is parsed as                                                                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Region`         | A region (JSON). At the top level of the model, its components are rendered with the views given as query parameters                                 |
+| `Date`           | `LocalDate` (`2024-01-01`), `LocalDateTime` (`2024-01-01T12:00`) or `ZonedDateTime` (`2024-01-01T12:00+01:00`, `…Z`, `…[Europe/Oslo]`), by its shape |
+| `Count` or `Int` | An integer, if the value is one (`42`, `-3`). Otherwise it stays a string                                                                            |
 
 Any other value is parsed as JSON if it looks like an array, an object, a boolean or `null`, and is a string otherwise.
 The match is case-sensitive, so `date` on its own is left alone.
+
+Only a top-level `…Region` has its components rendered. A region nested inside another value, like
+`page={"mainRegion": {...}}`, is parsed as JSON, but its components are not rendered.
 
 ### Requirements
 

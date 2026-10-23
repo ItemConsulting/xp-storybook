@@ -56,16 +56,14 @@ export type ParsedParams = {
 };
 
 export function parseParams(params: Record<string, string>): ParsedParams {
-  const { template } = params;
   // Deliberately not object rest (`...extra`): the bundler lowers it with a helper that calls
   // Array.prototype.includes, which Nashorn does not have. See tsdown.config.mts.
-  // The reserved parameters configure the renderer, so none of them belongs in the model.
   const extra = filterObject(params, (_value, key) => key !== "template" && key !== "xpAppName");
   const [views, rawModel] = split(extra, (_value, key) => isComponentDescriptor(key));
   const model = deserializeJsonEntries(rawModel);
 
   return {
-    template,
+    template: params.template,
     views: parseViews(views, params.xpAppName),
     model,
     components: getRegionComponents(findRegions(model, REGION_KEY_SUFFIX)),

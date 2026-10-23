@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import { deserializeJsonEntries, isJsonString } from "/lib/storybook/deserializing";
+import { LocalDate } from "/lib/time";
 import { expect } from "./expect.mts";
 
 describe("isJsonString", () => {
@@ -42,16 +43,24 @@ describe("deserializeJsonEntries", () => {
     });
   });
 
-  it("treats a key ending in Count or Number as an integer", () => {
-    expect(deserializeJsonEntries({ itemCount: "7", pageNumber: "8" })).toEqual({ itemCount: 7, pageNumber: 8 });
+  it("treats a key ending in Count or Int as an integer", () => {
+    expect(deserializeJsonEntries({ itemCount: "7", pageInt: "8", offsetInt: "-3" })).toEqual({
+      itemCount: 7,
+      pageInt: 8,
+      offsetInt: -3,
+    });
   });
 
-  it("leaves a Count or Number value that is not all digits as a string", () => {
-    expect(deserializeJsonEntries({ phoneNumber: "+47 123 45 678", itemCount: "", pageNumber: "-1" })).toEqual({
-      phoneNumber: "+47 123 45 678",
+  it("leaves a Count or Int value that is not an integer as a string", () => {
+    expect(deserializeJsonEntries({ itemCount: "", pageInt: "3.5", offsetInt: "+1" })).toEqual({
       itemCount: "",
-      pageNumber: "-1",
+      pageInt: "3.5",
+      offsetInt: "+1",
     });
+  });
+
+  it("leaves a key ending in Number alone", () => {
+    expect(deserializeJsonEntries({ postalNumber: "0150" })).toEqual({ postalNumber: "0150" });
   });
 
   it("picks the date type from the shape of a value whose key ends in Date", () => {
@@ -83,6 +92,28 @@ describe("deserializeJsonEntries", () => {
 
     expect(deserializeJsonEntries({ publishDate: "tomorrow" })).toEqual({ publishDate: "tomorrow" });
     expect(warn).toHaveBeenCalled();
+  });
+
+  it("keeps the raw string and warns when a date-shaped value is not a real date", (t) => {
+    const warn = t.mock.method(console, "warn", () => undefined);
+    t.mock.method(LocalDate, "parse", () => {
+      throw new Error("Text '2024-02-30' could not be parsed");
+    });
+
+    expect(deserializeJsonEntries({ publishDate: "2024-02-30" })).toEqual({ publishDate: "2024-02-30" });
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it("parses JSON in a key ending in Date, without warning", (t) => {
+    const warn = t.mock.method(console, "warn", () => undefined);
+
+    expect(deserializeJsonEntries({ isUpToDate: "true", endDate: "null", holidayDate: '["2024-01-01"]' })).toEqual({
+      isUpToDate: true,
+      endDate: null,
+      // Each element is deserialized under its array's key, so a list of dates is a list of LocalDates.
+      holidayDate: [{ kind: "LocalDate", v: "2024-01-01" }],
+    });
+    expect(warn.mock.callCount()).toBe(0);
   });
 
   it("matches the key suffix case-sensitively, and only at the end", () => {

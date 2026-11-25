@@ -1,17 +1,13 @@
 name: Publish
 on:
-  workflow_run:
-    workflows: [CI]
-    branches: [main]
-    types: [completed]
+  # Called by CI once it has built a push to main or next (the prerelease branch, in changesets
+  # pre mode)
+  workflow_call:
 
   # Manual escape hatch: re-publish the jar for whatever version main is on.
   # Use it when the Gradle step below failed after the release already went out,
   # since a plain re-run finds no changesets left and publishes nothing.
-  # In pre mode (.changeset/pre.json) that version is a -SNAPSHOT, which can always be published again.
   workflow_dispatch:
-
-concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write # push the version bump commit and the v<version> tag, create the release
@@ -19,15 +15,16 @@ permissions:
 
 jobs:
   publish:
-    # The `branches` filter above matches the head branch of the CI run, so a pull request opened
-    # from a fork's own `main` would pass it — and workflow_run always runs here, in this
-    # repository, with the secrets. Requiring the CI run to have come from a push closes that,
-    # since a fork cannot push to this repository.
-    # A manual run publishes whatever it has checked out, so it is only allowed from main.
+    # When called by CI, github.event_name is CI's event, which is always a push there (see the
+    # publish job in main.yml), and a fork cannot push to this repository.
+    # A manual run publishes whatever it has checked out, so it is only allowed from main and next.
     if: >-
-      ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
-      (github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.conclusion == 'success') }}
+      ${{ github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/next')) }}
+    # One publish per branch at a time. CI's own concurrency already queues pushes to a branch,
+    # this also covers a manual run.
+    concurrency: publish-${{ github.ref }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -47,7 +44,7 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 25
+          java-version-file: .java-version
 
       - uses: gradle/actions/setup-gradle@v6
 
@@ -65,7 +62,7 @@ jobs:
       # In pre mode (`npx changeset pre enter beta`, which writes .changeset/pre.json) the same
       # happens with a prerelease version like 2.0.0-beta.0: the PR is titled "Version Packages
       # (beta)", the tag is v2.0.0-beta.0, and .changeset/gradle-version.mjs has set the jar version
-      # to 2.0.0-SNAPSHOT, so the step below publishes it to the snapshots repository.
+      # to 2.0.0-beta.0 as well, so the step below publishes it to the releases repository.
       - name: Create Release Pull Request or Publish
         id: changesets
         if: github.event_name != 'workflow_dispatch'

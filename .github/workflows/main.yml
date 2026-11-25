@@ -1,10 +1,11 @@
 name: CI
 on:
-  # Only main, because every other branch is covered by pull_request below. Keeping "**" here as
-  # well would run each pushed branch twice once it has a PR.
+  # Only main and next (the prerelease branch), because every other branch is covered by
+  # pull_request below. Keeping "**" here as well would run each pushed branch twice once it has a PR.
   push:
     branches:
       - main
+      - next
 
   # A fork's commits live in the fork, so a push event never fires for them and a contributor's
   # pull request would otherwise get no CI at all.
@@ -15,8 +16,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # Never cancel a run on main: Publish is triggered by its completion.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # Never cancel a run on main or next: it ends by publishing (see the publish job).
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/next' }}
 
 jobs:
   build:
@@ -29,10 +30,11 @@ jobs:
           cache: "npm"
 
       # The com.enonic.xp.settings plugin needs a Gradle JVM of 21+, and XP 8 compiles against Java 25
+      # The version is read from .java-version, which can differ between main and next
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 25
+          java-version-file: .java-version
 
       - uses: gradle/actions/setup-gradle@v6
 
@@ -58,3 +60,17 @@ jobs:
             build/reports/tests/test
             build/test-results/test
           retention-days: 7
+
+  # Publish is called from here, rather than started by a workflow_run, so that it runs for the
+  # branch and commit that was pushed: changesets/action takes both from GITHUB_REF and GITHUB_SHA,
+  # which a workflow_run always sets to main, so a push to next would version and release main.
+  publish:
+    needs: build
+    # Only a push publishes, and on.push only lists main and next (the prerelease branch, in
+    # changesets pre mode). A pull request, a fork's included, never reaches this job.
+    if: github.event_name == 'push'
+    permissions:
+      contents: write # push the version bump commit and the v<version> tag, create the release
+      pull-requests: write # open and update the "Version Packages" PR
+    uses: ./.github/workflows/publish.yml
+    secrets: inherit

@@ -1,18 +1,16 @@
 // Copies the version of package.json into gradle.properties, run by `npm run versioning` after `changeset version`.
 //
-// A stable version (1.0.0) is used as is. Anything else is a prerelease, like the 1.0.0-beta.0 that `changeset pre`
-// produces, and the jar is versioned as a snapshot of the release it leads up to (1.0.0-SNAPSHOT): Maven repositories
-// only treat the -SNAPSHOT suffix as a snapshot, and build.gradle publishes those to the snapshots repository.
+// The jar gets the same version as package.json, prereleases included: the 1.0.0-beta.0 that `changeset pre`
+// produces is published as 1.0.0-beta.0, not as a snapshot. Maven sorts it before 1.0.0, and since it does not end
+// with -SNAPSHOT, build.gradle publishes it to the releases repository.
 import { readFileSync, writeFileSync } from "node:fs";
 
 const { version } = JSON.parse(readFileSync("package.json", "utf8"));
-const [, release, prerelease] = /^(\d+\.\d+\.\d+)(.*)$/.exec(version) ?? [];
 
-if (!release) {
+if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) {
   throw new Error(`Unexpected version in package.json: "${version}"`);
 }
 
-const jarVersion = prerelease ? `${release}-SNAPSHOT` : release;
 const gradleProperties = readFileSync("gradle.properties", "utf8");
 const versionLine = /^version *=.*$/m;
 
@@ -20,5 +18,5 @@ if (!versionLine.test(gradleProperties)) {
   throw new Error('No "version = ..." line found in gradle.properties');
 }
 
-writeFileSync("gradle.properties", gradleProperties.replace(versionLine, `version = ${jarVersion}`));
-console.log(`gradle.properties: version = ${jarVersion}`);
+writeFileSync("gradle.properties", gradleProperties.replace(versionLine, `version = ${version}`));
+console.log(`gradle.properties: version = ${version}`);
